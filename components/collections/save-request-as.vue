@@ -1,30 +1,20 @@
 <template>
   <modal v-if="show" @close="hideModal">
     <div slot="header">
-      <ul>
-        <li>
-          <div class="row-wrapper">
-            <h3 class="title">{{ $t("save_request_as") }}</h3>
-            <div>
-              <button class="icon" @click="hideModal">
-                <closeIcon class="material-icons" />
-              </button>
-            </div>
-          </div>
-        </li>
-      </ul>
+      <div class="row-wrapper">
+        <h3 class="title">{{ $t("save_request_as") }}</h3>
+        <div>
+          <button class="icon" @click="hideModal">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+      </div>
     </div>
-    <div slot="body">
+    <div slot="body" class="flex flex-col">
+      <label for="selectLabel">{{ $t("token_req_name") }}</label>
+      <input type="text" id="selectLabel" v-model="requestData.name" @keyup.enter="saveRequestAs" />
       <ul>
         <li>
-          <label for="selectLabel">{{ $t("label") }}</label>
-          <input
-            type="text"
-            id="selectLabel"
-            v-model="requestData.name"
-            :placeholder="defaultRequestName"
-            @keyup.enter="saveRequestAs"
-          />
           <label for="selectCollection">{{ $t("collection") }}</label>
           <span class="select-wrapper">
             <select type="text" id="selectCollection" v-model="requestData.collectionIndex">
@@ -40,13 +30,17 @@
               </option>
             </select>
           </span>
-          <label>{{ $t("folder") }}</label>
-          <autocomplete
-            :placeholder="$t('search')"
-            :source="folders"
-            :spellcheck="false"
-            v-model="requestData.folderName"
-          />
+        </li>
+      </ul>
+      <label>{{ $t("folder") }}</label>
+      <autocomplete
+        :placeholder="$t('search')"
+        :source="folders"
+        :spellcheck="false"
+        v-model="requestData.folderName"
+      />
+      <ul>
+        <li>
           <label for="selectRequest">{{ $t("request") }}</label>
           <span class="select-wrapper">
             <select type="text" id="selectRequest" v-model="requestData.requestIndex">
@@ -77,19 +71,15 @@
 
 <script>
 import { fb } from "~/helpers/fb"
-import closeIcon from "~/static/icons/close-24px.svg?inline"
 
 export default {
-  components: {
-    closeIcon,
-  },
   props: {
     show: Boolean,
     editingRequest: Object,
   },
   data() {
     return {
-      defaultRequestName: "My Request",
+      defaultRequestName: "Untitled Request",
       requestData: {
         name: undefined,
         collectionIndex: undefined,
@@ -108,8 +98,8 @@ export default {
     "requestData.folderName": function resetRequestIndex() {
       this.$data.requestData.requestIndex = undefined
     },
-    editingRequest({ label }) {
-      this.defaultRequestName = label || "My Request"
+    editingRequest({ name }) {
+      this.$data.requestData.name = name || this.$data.defaultRequestName
     },
   },
   computed: {
@@ -168,10 +158,16 @@ export default {
         })
         return
       }
+      if (this.$data.requestData.name.length === 0) {
+        this.$toast.error(this.$t("empty_req_name"), {
+          icon: "error",
+        })
+        return
+      }
 
       const requestUpdated = {
         ...this.$props.editingRequest,
-        name: this.$data.requestData.name || this.$data.defaultRequestName,
+        name: this.$data.requestData.name,
         collection: this.$data.requestData.collectionIndex,
       }
 
@@ -187,7 +183,6 @@ export default {
     },
     hideModal() {
       this.$emit("hide-modal")
-      this.$emit("hide-model") // for backward compatibility  // TODO: use fixed event
     },
   },
 }

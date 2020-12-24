@@ -1,5 +1,22 @@
 <template>
-  <pw-section class="green" icon="history" :label="$t('environments')" ref="environments">
+  <pw-section class="green" icon="history" :label="$t('environments')" ref="environments" no-legend>
+    <div class="show-on-large-screen">
+      <span class="select-wrapper">
+        <select
+          v-model="selectedEnvironmentIndex"
+          :disabled="environments.length == 0"
+          class="rounded-t-lg"
+        >
+          <option :value="-1">No environment</option>
+          <option v-if="environments.length === 0" value="0">
+            {{ $t("create_new_environment") }}
+          </option>
+          <option v-for="(environment, index) in environments" :value="index" :key="index">
+            {{ environment.name }}
+          </option>
+        </select>
+      </span>
+    </div>
     <add-environment :show="showModalAdd" @hide-modal="displayModalAdd(false)" />
     <edit-environment
       :show="showModalEdit"
@@ -11,7 +28,7 @@
       :show="showModalImportExport"
       @hide-modal="displayModalImportExport(false)"
     />
-    <div class="row-wrapper">
+    <div class="border-b row-wrapper border-brdColor">
       <div>
         <button class="icon" @click="displayModalAdd(true)">
           <i class="material-icons">add</i>
@@ -34,9 +51,6 @@
             :environmentIndex="index"
             :environment="environment"
             @edit-environment="editEnvironment(environment, index)"
-            @select-environment="
-              $emit('use-environment', { environment: environment, environments: environments })
-            "
           />
         </li>
       </ul>
@@ -61,6 +75,11 @@ export default {
       showModalEdit: false,
       editingEnvironment: undefined,
       editingEnvironmentIndex: undefined,
+      selectedEnvironmentIndex: -1,
+      defaultEnvironment: {
+        name: "My Environment Variables",
+        variables: [],
+      },
     }
   },
   computed: {
@@ -68,6 +87,38 @@ export default {
       return fb.currentUser !== null
         ? fb.currentEnvironments
         : this.$store.state.postwoman.environments
+    },
+  },
+  watch: {
+    selectedEnvironmentIndex(val) {
+      if (val === -1)
+        this.$emit("use-environment", {
+          environment: this.defaultEnvironment,
+          environments: this.environments,
+        })
+      else
+        this.$emit("use-environment", {
+          environment: this.environments[val],
+          environments: this.environments,
+        })
+    },
+    environments: {
+      handler(val) {
+        if (val.length === 0) {
+          this.selectedEnvironmentIndex = -1
+          this.$emit("use-environment", {
+            environment: this.defaultEnvironment,
+            environments: this.environments,
+          })
+        } else {
+          if (this.environments[this.selectedEnvironmentIndex])
+            this.$emit("use-environment", {
+              environment: this.environments[this.selectedEnvironmentIndex],
+              environments: this.environments,
+            })
+          else this.selectedEnvironmentIndex = -1
+        }
+      },
     },
   },
   async mounted() {

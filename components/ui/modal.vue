@@ -11,7 +11,7 @@
             <!-- <div class="fade top"></div>
             <div class="fade bottom"></div> -->
           </div>
-          <div class="modal-footer">
+          <div v-if="hasFooterSlot" class="modal-footer">
             <slot name="footer"></slot>
           </div>
         </div>
@@ -19,6 +19,7 @@
     </div>
   </transition>
 </template>
+
 <style scoped lang="scss">
 .modal-backdrop {
   @apply fixed;
@@ -31,7 +32,7 @@
   @apply justify-center;
   @apply transition;
   @apply ease-in-out;
-  @apply duration-200;
+  @apply duration-150;
 
   background-color: rgba(0, 0, 0, 0.32);
 }
@@ -49,20 +50,27 @@
   @apply flex-1;
   @apply flex-col;
   @apply m-2;
-  @apply p-2;
   @apply transition;
   @apply ease-in-out;
-  @apply duration-200;
+  @apply duration-150;
   @apply bg-bgColor;
   @apply rounded-lg;
   @apply shadow-2xl;
 
   max-height: calc(100vh - 128px);
-  max-width: 720px;
+  max-width: 640px;
+}
+
+.modal-header {
+  @apply pl-2;
 }
 
 .modal-body {
   @apply overflow-auto;
+}
+
+.modal-footer {
+  @apply p-2;
 }
 
 /*
@@ -82,10 +90,10 @@
 .modal-enter .modal-container,
 .modal-leave-active .modal-container {
   @apply transform;
-  @apply scale-75;
+  @apply scale-90;
   @apply transition;
   @apply ease-in-out;
-  @apply duration-200;
+  @apply duration-150;
 }
 
 .fade {
@@ -93,7 +101,7 @@
   @apply block;
   @apply transition;
   @apply ease-in-out;
-  @apply duration-200;
+  @apply duration-150;
 
   left: 16px;
   right: 20px;
@@ -110,3 +118,13 @@
   }
 }
 </style>
+
+<script>
+export default {
+  computed: {
+    hasFooterSlot() {
+      return !!this.$slots.footer
+    },
+  },
+}
+</script>

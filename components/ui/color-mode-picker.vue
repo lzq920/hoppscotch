@@ -1,5 +1,5 @@
 <template>
-  <li>
+  <div class="flex flex-col">
     <label>
       <ColorScheme placeholder="..." tag="span">
         {{ $t("background") }}:
@@ -9,12 +9,12 @@
         </span>
       </ColorScheme>
     </label>
-    <div class="space-x-2">
+    <div>
       <span
         v-for="(color, index) of colors"
         :key="`color-${index}`"
         v-tooltip="`${color.charAt(0).toUpperCase()}${color.slice(1)}`"
-        class="inline-flex items-center justify-center p-3 m-2 transition duration-200 ease-in-out bg-transparent rounded-full cursor-pointer border-collapseer-2 text-fgLightColor hover:text-fgColor hover:shadow-none"
+        class="inline-flex items-center justify-center p-3 m-2 transition duration-150 ease-in-out bg-transparent rounded-full cursor-pointer border-collapseer-2 text-fgLightColor hover:text-fgColor hover:shadow-none"
         :class="[
           { 'bg-bgDarkColor': color === $colorMode.preference },
           { 'text-acColor hover:text-acColor': color === $colorMode.value },
@@ -24,7 +24,7 @@
         <i class="material-icons">{{ getIcon(color) }}</i>
       </span>
     </div>
-  </li>
+  </div>
 </template>
 
 <script>

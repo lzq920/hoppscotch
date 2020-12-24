@@ -1,15 +1,27 @@
 <template>
   <div>
-    <pw-section class="blue" :label="$t('request')">
+    <pw-section class="blue" :label="$t('request')" no-legend>
       <ul>
         <li>
           <label for="mqtt-url">{{ $t("url") }}</label>
-          <input id="mqtt-url" type="url" v-model="url" spellcheck="false" />
+          <input
+            id="mqtt-url"
+            type="url"
+            v-model="url"
+            spellcheck="false"
+            class="md:rounded-bl-lg"
+            :placeholder="$t('url')"
+          />
         </li>
         <div>
           <li>
             <label for="connect" class="hide-on-small-screen">&nbsp;</label>
-            <button id="connect" :disabled="!validUrl" @click="toggleConnection">
+            <button
+              id="connect"
+              :disabled="!validUrl"
+              @click="toggleConnection"
+              class="rounded-b-lg md:rounded-bl-none md:rounded-br-lg"
+            >
               {{ this.connectionState ? $t("disconnect") : $t("connect") }}
               <span>
                 <i class="material-icons">{{ !connectionState ? "sync" : "sync_disabled" }}</i>
@@ -20,7 +32,7 @@
       </ul>
     </pw-section>
 
-    <pw-section class="blue" :label="$t('communication')">
+    <pw-section class="blue" :label="$t('communication')" no-legend>
       <ul>
         <li>
           <log :title="$t('log')" :log="this.log" />
@@ -33,7 +45,13 @@
         </li>
         <li>
           <label for="mqtt-message">{{ $t("message") }}</label>
-          <input id="mqtt-message" type="text" v-model="msg" spellcheck="false" />
+          <input
+            id="mqtt-message"
+            type="text"
+            v-model="msg"
+            spellcheck="false"
+            class="border-dashed md:border-l border-brdColor"
+          />
         </li>
         <div>
           <li>
@@ -50,12 +68,24 @@
       <ul>
         <li>
           <label for="sub_topic">{{ $t("mqtt_topic") }}</label>
-          <input id="sub_topic" type="text" v-model="sub_topic" spellcheck="false" />
+          <input
+            id="sub_topic"
+            type="text"
+            v-model="sub_topic"
+            spellcheck="false"
+            class="md:rounded-bl-lg"
+          />
         </li>
         <div>
           <li>
             <label for="subscribe" class="hide-on-small-screen">&nbsp;</label>
-            <button id="subscribe" name="get" :disabled="!cansubscribe" @click="toggleSubscription">
+            <button
+              id="subscribe"
+              name="get"
+              :disabled="!cansubscribe"
+              @click="toggleSubscription"
+              class="rounded-b-lg md:rounded-bl-none md:rounded-br-lg"
+            >
               {{ subscriptionState ? $t("mqtt_unsubscribe") : $t("mqtt_subscribe") }}
               <span>
                 <i class="material-icons">{{ subscriptionState ? "sync_disabled" : "sync" }}</i>
@@ -70,12 +100,13 @@
 
 <script>
 import Paho from "paho-mqtt"
-import { wsValid } from "~/helpers/utils/valid"
+import debounce from "~/helpers/utils/debounce"
 
 export default {
   data() {
     return {
       url: "wss://test.mosquitto.org:8081",
+      isUrlValid: true,
       client: null,
       pub_topic: "",
       sub_topic: "",
@@ -86,9 +117,23 @@ export default {
       subscriptionState: false,
     }
   },
+  mounted() {
+    if (process.browser) {
+      this.worker = this.$worker.createRejexWorker()
+      this.worker.addEventListener("message", this.workerResponseHandler)
+    }
+  },
+  destroyed() {
+    this.worker.terminate()
+  },
+  watch: {
+    url(val) {
+      this.debouncer()
+    },
+  },
   computed: {
     validUrl() {
-      return wsValid(this.url)
+      return this.isUrlValid
     },
     canpublish() {
       return this.pub_topic != "" && this.msg != "" && this.connectionState
@@ -98,6 +143,12 @@ export default {
     },
   },
   methods: {
+    debouncer: debounce(function () {
+      this.worker.postMessage({ type: "ws", url: this.url })
+    }, 1000),
+    workerResponseHandler({ data }) {
+      if (data.url === this.url) this.isUrlValid = data.result
+    },
     connect() {
       this.log = [
         {
@@ -142,9 +193,9 @@ export default {
         icon: "sync",
       })
     },
-    onMessageArrived(message) {
+    onMessageArrived({ payloadString, destinationName }) {
       this.log.push({
-        payload: `Message: ${message.payloadString} arrived on topic: ${message.destinationName}`,
+        payload: `Message: ${payloadString} arrived on topic: ${destinationName}`,
         source: "info",
         color: "var(--ac-color)",
         ts: new Date().toLocaleTimeString(),

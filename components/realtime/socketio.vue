@@ -1,6 +1,6 @@
 <template>
   <div>
-    <pw-section class="blue" :label="$t('request')" ref="request">
+    <pw-section class="blue" :label="$t('request')" ref="request" no-legend>
       <ul>
         <li>
           <label for="socketio-url">{{ $t("url") }}</label>
@@ -11,6 +11,8 @@
             :class="{ error: !urlValid }"
             v-model="url"
             @keyup.enter="urlValid ? toggleConnection() : null"
+            class="md:rounded-bl-lg"
+            :placeholder="$t('url')"
           />
         </li>
         <div>
@@ -22,7 +24,13 @@
         <div>
           <li>
             <label for="connect" class="hide-on-small-screen">&nbsp;</label>
-            <button :disabled="!urlValid" id="connect" name="connect" @click="toggleConnection">
+            <button
+              :disabled="!urlValid"
+              id="connect"
+              name="connect"
+              @click="toggleConnection"
+              class="rounded-b-lg md:rounded-bl-none md:rounded-br-lg"
+            >
               {{ !connectionState ? $t("connect") : $t("disconnect") }}
               <span>
                 <i class="material-icons">
@@ -34,7 +42,8 @@
         </div>
       </ul>
     </pw-section>
-    <pw-section class="purple" :label="$t('communication')" id="response" ref="response">
+
+    <pw-section class="purple" :label="$t('communication')" id="response" ref="response" no-legend>
       <ul>
         <li>
           <log :title="$t('log')" :log="communication.log" />
@@ -59,7 +68,12 @@
           </div>
         </li>
       </ul>
-      <ul v-for="(input, index) of communication.inputs" :key="`input-${index}`">
+      <ul
+        v-for="(input, index) of communication.inputs"
+        :key="`input-${index}`"
+        class="border-b border-dashed divide-y md:divide-x border-brdColor divide-dashed divide-brdColor md:divide-y-0"
+        :class="{ 'border-t': index == 0 }"
+      >
         <li>
           <input
             name="message"
@@ -75,9 +89,8 @@
               class="icon"
               @click="removeCommunicationInput({ index })"
               v-tooltip.bottom="$t('delete')"
-              :id="`delete-socketio-message-${index}`"
             >
-              <deleteIcon class="material-icons" />
+              <i class="material-icons">delete</i>
             </button>
           </li>
         </div>
@@ -105,19 +118,16 @@
 </template>
 
 <script>
-import { socketioValid } from "~/helpers/utils/valid"
 import io from "socket.io-client"
 import wildcard from "socketio-wildcard"
-import deleteIcon from "~/static/icons/delete-24px.svg?inline"
+import debounce from "~/helpers/utils/debounce"
 
 export default {
-  components: {
-    deleteIcon,
-  },
   data() {
     return {
       url: "wss://main-daxrc78qyb411dls-gtw.qovery.io",
       path: "/socket.io",
+      isUrlValid: true,
       connectionState: false,
       io: null,
       communication: {
@@ -127,12 +137,32 @@ export default {
       },
     }
   },
+  mounted() {
+    if (process.browser) {
+      this.worker = this.$worker.createRejexWorker()
+      this.worker.addEventListener("message", this.workerResponseHandler)
+    }
+  },
+  destroyed() {
+    this.worker.terminate()
+  },
   computed: {
     urlValid() {
-      return socketioValid(this.url)
+      return this.isUrlValid
+    },
+  },
+  watch: {
+    url(val) {
+      this.debouncer()
     },
   },
   methods: {
+    debouncer: debounce(function () {
+      this.worker.postMessage({ type: "socketio", url: this.url })
+    }, 1000),
+    workerResponseHandler({ data }) {
+      if (data.url === this.url) this.isUrlValid = data.result
+    },
     removeCommunicationInput({ index }) {
       this.$delete(this.communication.inputs, index)
     },

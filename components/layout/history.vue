@@ -1,14 +1,37 @@
 <template>
-  <pw-section class="green" icon="history" :label="$t('history')" ref="history">
+  <pw-section class="green" icon="history" :label="$t('history')" ref="history" no-legend>
     <div class="show-on-large-screen">
-      <input aria-label="Search" type="search" :placeholder="$t('search')" v-model="filterText" />
-      <button class="icon">
-        <i class="material-icons">search</i>
-      </button>
+      <input
+        aria-label="Search"
+        type="search"
+        :placeholder="$t('search')"
+        v-model="filterText"
+        class="rounded-t-lg"
+      />
     </div>
-    <div class="virtual-list" :class="{ filled: filteredHistory.length }">
-      <ul v-for="(entry, index) in filteredHistory" :key="index" class="entry">
+    <div
+      class="divide-y virtual-list divide-dashed divide-brdColor"
+      :class="{ filled: filteredHistory.length }"
+    >
+      <ul v-for="(entry, index) in filteredHistory" :key="index">
         <div class="show-on-large-screen">
+          <span
+            class="p-2 m-2"
+            :class="findEntryStatus(entry).className"
+            :style="{ '--status-code': entry.status }"
+          >
+            {{ `${entry.method} \xA0 • \xA0 ${entry.status}` }}
+          </span>
+          <li>
+            <input
+              :aria-label="$t('token_req_name')"
+              type="text"
+              readonly
+              :value="entry.name"
+              :placeholder="$t('empty_req_name')"
+              class="bg-transparent"
+            />
+          </li>
           <button
             class="icon"
             :class="{ stared: entry.star }"
@@ -21,16 +44,6 @@
               {{ entry.star ? "star" : "star_border" }}
             </i>
           </button>
-          <li>
-            <input
-              :aria-label="$t('label')"
-              type="text"
-              readonly
-              :value="entry.label"
-              :placeholder="$t('no_label')"
-              class="bg-color"
-            />
-          </li>
           <!-- <li>
             <button
               class="icon"
@@ -53,7 +66,6 @@
               <div>
                 <button
                   class="icon"
-                  :id="'use-button#' + index"
                   @click="useHistory(entry)"
                   :aria-label="$t('edit')"
                   v-close-popover
@@ -65,12 +77,11 @@
               <div>
                 <button
                   class="icon"
-                  :id="'delete-button#' + index"
                   @click="deleteHistory(entry)"
                   :aria-label="$t('delete')"
                   v-close-popover
                 >
-                  <deleteIcon class="material-icons" />
+                  <i class="material-icons">delete</i>
                   <span>{{ $t("delete") }}</span>
                 </button>
               </div>
@@ -78,40 +89,14 @@
           </v-popover>
         </div>
         <div class="show-on-large-screen">
-          <li class="method-list-item">
-            <input
-              :aria-label="$t('method')"
-              type="text"
-              readonly
-              :value="entry.method"
-              :class="findEntryStatus(entry).className"
-              :style="{ '--status-code': entry.status }"
-            />
-            <span
-              class="entry-status-code"
-              :class="findEntryStatus(entry).className"
-              :style="{ '--status-code': entry.status }"
-              >{{ entry.status }}</span
-            >
-          </li>
-        </div>
-        <div class="show-on-large-screen">
           <li>
             <input
               :aria-label="$t('url')"
               type="text"
               readonly
-              :value="entry.url"
+              :value="`${entry.url}${entry.path}`"
               :placeholder="$t('no_url')"
-            />
-          </li>
-          <li>
-            <input
-              :aria-label="$t('path')"
-              type="text"
-              readonly
-              :value="entry.path"
-              :placeholder="$t('no_path')"
+              class="pt-0 mt-0 text-sm bg-transparent text-fgLightColor"
             />
           </li>
         </div>
@@ -124,6 +109,7 @@
                 readonly
                 :value="entry.time"
                 v-tooltip="entry.date"
+                class="pt-0 mt-0 text-sm bg-transparent text-fgLightColor"
               />
             </li>
             <li>
@@ -133,6 +119,7 @@
                 readonly
                 :value="entry.duration"
                 :placeholder="$t('no_duration')"
+                class="pt-0 mt-0 text-sm bg-transparent text-fgLightColor"
               />
             </li>
             <li>
@@ -142,28 +129,22 @@
                 readonly
                 :value="entry.preRequestScript"
                 :placeholder="$t('no_prerequest_script')"
+                class="pt-0 mt-0 text-sm bg-transparent text-fgLightColor"
               />
             </li>
           </div>
         </transition>
       </ul>
     </div>
-    <ul :class="{ hidden: filteredHistory.length != 0 || history.length === 0 }">
-      <li>
-        <label>{{ $t("nothing_found") }} "{{ filterText }}"</label>
-      </li>
-    </ul>
+    <p :class="{ hidden: filteredHistory.length != 0 || history.length === 0 }" class="info">
+      {{ $t("nothing_found") }} "{{ filterText }}"
+    </p>
     <p v-if="history.length === 0" class="info">
       <i class="material-icons">schedule</i> {{ $t("history_empty") }}
     </p>
-    <div v-if="history.length !== 0">
+    <div v-if="history.length !== 0" class="rounded-b-lg bg-bgDarkColor">
       <div class="row-wrapper" v-if="!isClearingHistory">
-        <button
-          class="icon"
-          id="clear-history-button"
-          :disabled="history.length === 0"
-          @click="enableHistoryClearing"
-        >
+        <button class="icon" :disabled="history.length === 0" @click="enableHistoryClearing">
           <i class="material-icons">clear_all</i>
           <span>{{ $t("clear_all") }}</span>
         </button>
@@ -220,25 +201,13 @@
         </v-popover>
       </div>
       <div class="row-wrapper" v-else>
-        <label for="clear-history-button" class="info">
-          <i class="material-icons">help_outline</i> {{ $t("are_you_sure") }}
-        </label>
+        <p class="info"><i class="material-icons">help_outline</i> {{ $t("are_you_sure") }}</p>
         <div>
-          <button
-            class="icon"
-            id="confirm-clear-history-button"
-            @click="clearHistory"
-            v-tooltip="$t('yes')"
-          >
+          <button class="icon" @click="clearHistory" v-tooltip="$t('yes')">
             <i class="material-icons">done</i>
           </button>
-          <button
-            class="icon"
-            id="reject-clear-history-button"
-            @click="disableHistoryClearing"
-            v-tooltip="$t('no')"
-          >
-            <closeIcon class="material-icons" />
+          <button class="icon" @click="disableHistoryClearing" v-tooltip="$t('no')">
+            <i class="material-icons">close</i>
           </button>
         </div>
       </div>
@@ -274,26 +243,6 @@ ol {
   flex-direction: column;
 }
 
-.method-list-item {
-  position: relative;
-
-  span {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-family: "Roboto Mono", monospace;
-    font-weight: 400;
-    background-color: transparent;
-    padding: 2px 6px;
-    border-radius: 8px;
-  }
-}
-
-.entry {
-  border-bottom: 1px dashed var(--brd-color);
-  padding: 0 0 8px;
-}
-
 @media (max-width: 720px) {
   .virtual-list.filled {
     min-height: 320px;
@@ -306,19 +255,13 @@ ol {
 </style>
 
 <script>
-import { findStatusGroup } from "~/pages/index"
+import findStatusGroup from "~/helpers/findStatusGroup"
 import { fb } from "~/helpers/fb"
-import closeIcon from "~/static/icons/close-24px.svg?inline"
-import deleteIcon from "~/static/icons/delete-24px.svg?inline"
 
 const updateOnLocalStorage = (propertyName, property) =>
   window.localStorage.setItem(propertyName, JSON.stringify(property))
 
 export default {
-  components: {
-    closeIcon,
-    deleteIcon,
-  },
   data() {
     return {
       history:

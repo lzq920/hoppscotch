@@ -2,7 +2,7 @@
   <div class="page">
     <div class="content">
       <div class="page-columns inner-left">
-        <pw-section class="blue" :label="$t('endpoint')" ref="endpoint">
+        <pw-section class="blue" :label="$t('endpoint')" ref="endpoint" no-legend>
           <ul>
             <li>
               <label for="url">{{ $t("url") }}</label>
@@ -12,12 +12,19 @@
                 v-model="url"
                 spellcheck="false"
                 @keyup.enter="onPollSchemaClick()"
+                class="md:rounded-bl-lg"
+                :placeholder="$t('url')"
               />
             </li>
             <div>
               <li>
                 <label for="get" class="hide-on-small-screen">&nbsp;</label>
-                <button id="get" name="get" @click="onPollSchemaClick">
+                <button
+                  id="get"
+                  name="get"
+                  @click="onPollSchemaClick"
+                  class="rounded-b-lg md:rounded-bl-none md:rounded-br-lg"
+                >
                   {{ !isPollingSchema ? $t("connect") : $t("disconnect") }}
                   <span
                     ><i class="material-icons">{{
@@ -30,73 +37,80 @@
           </ul>
         </pw-section>
 
-        <pw-section class="orange" :label="$t('headers')" ref="headers">
-          <ul v-if="headers.length !== 0">
-            <li>
-              <div class="row-wrapper">
-                <label for="headerList">{{ $t("header_list") }}</label>
-                <div>
-                  <button class="icon" @click="headers = []" v-tooltip.bottom="$t('clear')">
-                    <i class="material-icons">clear_all</i>
-                  </button>
-                </div>
-              </div>
-            </li>
-          </ul>
-          <ul v-for="(header, index) in headers" :key="`${header.value}_${index}`">
-            <li>
-              <autocomplete
-                :placeholder="$t('header_count', { count: index + 1 })"
-                :source="commonHeaders"
-                :spellcheck="false"
-                :value="header.key"
-                @input="
-                  $store.commit('setGQLHeaderKey', {
-                    index,
-                    value: $event,
-                  })
-                "
-                autofocus
-              />
-            </li>
-            <li>
-              <input
-                :placeholder="$t('value_count', { count: index + 1 })"
-                :name="'value' + index"
-                :value="header.value"
-                @change="
-                  $store.commit('setGQLHeaderValue', {
-                    index,
-                    value: $event.target.value,
-                  })
-                "
-                autofocus
-              />
-            </li>
-            <div>
+        <pw-section class="orange" :label="$t('headers')" ref="headers" no-legend>
+          <div class="flex flex-col">
+            <label>{{ $t("headers") }}</label>
+            <ul v-if="headers.length !== 0">
               <li>
-                <button
-                  class="icon"
-                  @click="removeRequestHeader(index)"
-                  v-tooltip.bottom="$t('delete')"
-                  id="header"
-                >
-                  <deleteIcon class="material-icons" />
+                <div class="row-wrapper">
+                  <label for="headerList">{{ $t("header_list") }}</label>
+                  <div>
+                    <button class="icon" @click="headers = []" v-tooltip.bottom="$t('clear')">
+                      <i class="material-icons">clear_all</i>
+                    </button>
+                  </div>
+                </div>
+              </li>
+            </ul>
+            <ul
+              v-for="(header, index) in headers"
+              :key="`${header.value}_${index}`"
+              class="border-b border-dashed divide-y md:divide-x border-brdColor divide-dashed divide-brdColor md:divide-y-0"
+              :class="{ 'border-t': index == 0 }"
+            >
+              <li>
+                <autocomplete
+                  :placeholder="$t('header_count', { count: index + 1 })"
+                  :source="commonHeaders"
+                  :spellcheck="false"
+                  :value="header.key"
+                  @input="
+                    $store.commit('setGQLHeaderKey', {
+                      index,
+                      value: $event,
+                    })
+                  "
+                  autofocus
+                />
+              </li>
+              <li>
+                <input
+                  :placeholder="$t('value_count', { count: index + 1 })"
+                  :name="`value ${index}`"
+                  :value="header.value"
+                  @change="
+                    $store.commit('setGQLHeaderValue', {
+                      index,
+                      value: $event.target.value,
+                    })
+                  "
+                  autofocus
+                />
+              </li>
+              <div>
+                <li>
+                  <button
+                    class="icon"
+                    @click="removeRequestHeader(index)"
+                    v-tooltip.bottom="$t('delete')"
+                  >
+                    <i class="material-icons">delete</i>
+                  </button>
+                </li>
+              </div>
+            </ul>
+            <ul>
+              <li>
+                <button class="icon" @click="addRequestHeader">
+                  <i class="material-icons">add</i>
+                  <span>{{ $t("add_new") }}</span>
                 </button>
               </li>
-            </div>
-          </ul>
-          <ul>
-            <li>
-              <button class="icon" @click="addRequestHeader">
-                <i class="material-icons">add</i>
-                <span>{{ $t("add_new") }}</span>
-              </button>
-            </li>
-          </ul>
+            </ul>
+          </div>
         </pw-section>
 
-        <pw-section class="green" :label="$t('schema')" ref="schema">
+        <pw-section class="green" :label="$t('schema')" ref="schema" no-legend>
           <div class="row-wrapper">
             <label>{{ $t("schema") }}</label>
             <div v-if="schema">
@@ -143,20 +157,20 @@
               showPrintMargin: false,
               useWorker: false,
             }"
+            styles="rounded-b-lg"
           />
           <input
             v-else
-            class="missing-data-response"
+            class="rounded-b-lg missing-data-response"
             :value="$t('waiting_receive_schema')"
             ref="status"
-            id="status"
             name="status"
             readonly
             type="text"
           />
         </pw-section>
 
-        <pw-section class="teal" :label="$t('query')" ref="query">
+        <pw-section class="teal" :label="$t('query')" ref="query" no-legend>
           <div class="row-wrapper gqlRunQuery">
             <label for="gqlQuery">{{ $t("query") }}</label>
             <div>
@@ -195,80 +209,94 @@
               showPrintMargin: false,
               useWorker: false,
             }"
+            styles="rounded-b-lg"
           />
         </pw-section>
 
-        <pw-section class="yellow" label="Variables" ref="variables">
-          <ace-editor
-            v-model="variableString"
-            :lang="'json'"
-            :options="{
-              maxLines: 10,
-              minLines: 5,
-              fontSize: '16px',
-              autoScrollEditorIntoView: true,
-              showPrintMargin: false,
-              useWorker: false,
-            }"
-          />
-        </pw-section>
-
-        <pw-section class="purple" label="Response" ref="response">
-          <div class="row-wrapper">
-            <label for="responseField">{{ $t("response") }}</label>
-            <div>
-              <button
-                class="icon"
-                @click="downloadResponse"
-                ref="downloadResponse"
-                v-if="response"
-                v-tooltip="$t('download_file')"
-              >
-                <i class="material-icons">save_alt</i>
-              </button>
-              <button
-                class="icon"
-                @click="copyResponse"
-                ref="copyResponseButton"
-                v-if="response"
-                v-tooltip="$t('copy_response')"
-              >
-                <i class="material-icons">content_copy</i>
-              </button>
-            </div>
+        <pw-section class="yellow" :label="$t('variables')" ref="variables" no-legend>
+          <div class="flex flex-col">
+            <label>{{ $t("variables") }}</label>
+            <ace-editor
+              v-model="variableString"
+              :lang="'json'"
+              :options="{
+                maxLines: 10,
+                minLines: 5,
+                fontSize: '16px',
+                autoScrollEditorIntoView: true,
+                showPrintMargin: false,
+                useWorker: false,
+              }"
+              styles="rounded-b-lg"
+            />
           </div>
-          <ace-editor
-            v-if="response"
-            :value="response"
-            :lang="'json'"
-            :lint="false"
-            :options="{
-              maxLines: responseBodyMaxLines,
-              minLines: 10,
-              fontSize: '16px',
-              autoScrollEditorIntoView: true,
-              readOnly: true,
-              showPrintMargin: false,
-              useWorker: false,
-            }"
-          />
-          <input
-            v-else
-            class="missing-data-response"
-            :value="$t('waiting_receive_response')"
-            ref="status"
-            id="status"
-            name="status"
-            readonly
-            type="text"
-          />
+        </pw-section>
+
+        <pw-section class="purple" :label="$t('response')" ref="response" no-legend>
+          <div class="flex flex-col">
+            <label>{{ $t("response") }}</label>
+            <div class="row-wrapper">
+              <label for="responseField">{{ $t("response") }}</label>
+              <div>
+                <button
+                  class="icon"
+                  @click="downloadResponse"
+                  ref="downloadResponse"
+                  v-if="response"
+                  v-tooltip="$t('download_file')"
+                >
+                  <i class="material-icons">save_alt</i>
+                </button>
+                <button
+                  class="icon"
+                  @click="copyResponse"
+                  ref="copyResponseButton"
+                  v-if="response"
+                  v-tooltip="$t('copy_response')"
+                >
+                  <i class="material-icons">content_copy</i>
+                </button>
+              </div>
+            </div>
+            <ace-editor
+              v-if="response"
+              :value="response"
+              :lang="'json'"
+              :lint="false"
+              :options="{
+                maxLines: responseBodyMaxLines,
+                minLines: 10,
+                fontSize: '16px',
+                autoScrollEditorIntoView: true,
+                readOnly: true,
+                showPrintMargin: false,
+                useWorker: false,
+              }"
+              styles="rounded-b-lg"
+            />
+            <input
+              v-else
+              class="rounded-b-lg missing-data-response"
+              :value="$t('waiting_receive_response')"
+              ref="status"
+              name="status"
+              readonly
+              type="text"
+            />
+          </div>
         </pw-section>
       </div>
+
       <aside class="sticky-inner inner-right lg:max-w-md">
-        <pw-section class="purple" :label="$t('docs')" ref="docs">
+        <pw-section class="purple" :label="$t('docs')" ref="docs" no-legend>
           <section class="flex-col">
-            <input type="text" :placeholder="$t('search')" v-model="graphqlFieldsFilterText" />
-            <tabs ref="gqlTabs">
+            <input
+              type="text"
+              :placeholder="$t('search')"
+              v-model="graphqlFieldsFilterText"
+              class="rounded-t-lg"
+            />
+            <tabs ref="gqlTabs" styles="m-4">
               <div class="gqlTabs">
                 <tab
                   v-if="queryFields.length > 0"
@@ -297,8 +325,13 @@
                   </div>
                 </tab>
 
-                <tab v-if="gqlTypes.length > 0" :id="'types'" :label="$t('types')" ref="typesTab">
-                  <div v-for="type in filteredGqlTypes" :key="type.name" :id="`type_${type.name}`">
+                <tab
+                  v-if="graphqlTypes.length > 0"
+                  :id="'types'"
+                  :label="$t('types')"
+                  ref="typesTab"
+                >
+                  <div v-for="type in filteredGraphqlTypes" :key="type.name">
                     <type
                       :gqlType="type"
                       :isHighlighted="isGqlTypeHighlighted({ gqlType: type })"
@@ -316,7 +349,7 @@
               queryFields.length === 0 &&
               mutationFields.length === 0 &&
               subscriptionFields.length === 0 &&
-              gqlTypes.length === 0
+              graphqlTypes.length === 0
             "
             class="info"
           >
@@ -343,17 +376,15 @@ import * as gql from "graphql"
 import { commonHeaders } from "~/helpers/headers"
 import { getPlatformSpecialKey } from "~/helpers/platformutils"
 import { sendNetworkRequest } from "~/helpers/network"
-import deleteIcon from "~/static/icons/delete-24px.svg?inline"
 
 export default {
-  components: { deleteIcon },
   data() {
     return {
       commonHeaders,
       queryFields: [],
       mutationFields: [],
       subscriptionFields: [],
-      gqlTypes: [],
+      graphqlTypes: [],
       copyButton: '<i class="material-icons">content_copy</i>',
       downloadButton: '<i class="material-icons">save_alt</i>',
       doneButton: '<i class="material-icons">done</i>',
@@ -390,10 +421,10 @@ export default {
         fields: this.subscriptionFields,
       })
     },
-    filteredGqlTypes() {
+    filteredGraphqlTypes() {
       return this.getFilteredGraphqlTypes({
         filterText: this.graphqlFieldsFilterText,
-        types: this.gqlTypes,
+        types: this.graphqlTypes,
       })
     },
     url: {
@@ -447,13 +478,6 @@ export default {
         })
       },
     },
-    headerString() {
-      const result = this.headers
-        .filter(({ key }) => !!key)
-        .map(({ key, value }) => `${key}: ${value}`)
-        .join(",\n")
-      return result === "" ? "" : `${result}`
-    },
   },
   mounted() {
     if (this.$store.state.gql.schemaIntrospection && this.$store.state.gql.schema) {
@@ -494,8 +518,8 @@ export default {
       const normalizedText = text.toLowerCase()
 
       const isFilterTextFoundInDescription = graphqlFieldObject.description
-        .toLowerCase()
-        .includes(normalizedText)
+        ? graphqlFieldObject.description.toLowerCase().includes(normalizedText)
+        : false
       const isFilterTextFoundInName = graphqlFieldObject.name.toLowerCase().includes(normalizedText)
 
       return isFilterTextFoundInDescription || isFilterTextFoundInName
@@ -691,7 +715,7 @@ export default {
           types.push(typeMap[type])
         }
       }
-      this.gqlTypes = types
+      this.graphqlTypes = types
     },
     async onPollSchemaClick() {
       if (this.isPollingSchema) {

@@ -29,7 +29,6 @@ export default {
 
   // Global page headers (https://go.nuxtjs.dev/config-head)
   head: {
-    title: `${options.name} • ${options.shortDescription}`,
     meta: [
       {
         name: "keywords",
@@ -50,10 +49,6 @@ export default {
       },
       {
         itemprop: "image",
-        content: `${process.env.BASE_URL}/banner.jpg`,
-      },
-      {
-        property: "og:image",
         content: `${process.env.BASE_URL}/banner.jpg`,
       },
       // Add to homescreen for Chrome on Android. Fallback for PWA (handled by nuxt)
@@ -94,7 +89,11 @@ export default {
   css: ["~/assets/scss/styles.scss", "~/assets/scss/themes.scss", "~/assets/scss/fonts.scss"],
 
   // Plugins to run before rendering page (https://go.nuxtjs.dev/config-plugins)
-  plugins: ["~/plugins/vuex-persist", "~/plugins/v-tooltip"],
+  plugins: [
+    "~/plugins/vuex-persist",
+    "~/plugins/v-tooltip",
+    { src: "~/plugins/web-worker", ssr: false },
+  ],
 
   // Auto import components (https://go.nuxtjs.dev/config-components)
   components: true,
@@ -107,8 +106,6 @@ export default {
     "@nuxtjs/google-analytics",
     // https://github.com/nuxt-community/gtm-module
     "@nuxtjs/gtm",
-    // https://github.com/nuxt-community/svg-module
-    "@nuxtjs/svg",
     // https://github.com/nuxt-community/nuxt-tailwindcss
     "@nuxtjs/tailwindcss",
     // https://github.com/nuxt-community/color-mode-module
@@ -132,11 +129,13 @@ export default {
   // PWA module configuration (https://pwa.nuxtjs.org/setup)
   pwa: {
     meta: {
+      name: `${options.name} - ${options.shortDescription}`,
+      description: options.description,
       ogHost: process.env.BASE_URL,
+      ogImage: `${process.env.BASE_URL}/banner.jpg`,
       twitterCard: "summary_large_image",
       twitterSite: options.social.twitter,
       twitterCreator: options.social.twitter,
-      description: options.shortDescription,
       theme_color: options.app.background,
     },
     manifest: {
@@ -145,7 +144,6 @@ export default {
       description: options.shortDescription,
       start_url: "/",
       background_color: options.app.background,
-      theme_color: options.app.background,
     },
   },
 
@@ -276,7 +274,7 @@ export default {
       },
       {
         code: "ml",
-        name: "Malayalam",
+        name: "മലയാളം",
         iso: "ml-ML",
         file: "ml-ML.json",
       },
@@ -285,6 +283,12 @@ export default {
         name: "Vietnamese",
         iso: "vi-VN",
         file: "vi-VN.json",
+      },
+      {
+        code: "nl",
+        name: "Dutch",
+        iso: "nl-BE",
+        file: "nl-BE.json",
       },
     ],
     defaultLocale: "en",
@@ -302,13 +306,26 @@ export default {
   // Build Configuration (https://go.nuxtjs.dev/config-build)
   build: {
     // You can extend webpack config here
-    extend(config, ctx) {
+    extend(config, { isDev, isClient }) {
       // Sets webpack's mode to development if `isDev` is true.
-      if (ctx.isDev) {
+      if (isDev) {
         config.mode = "development"
       }
       config.node = {
         fs: "empty",
+      }
+
+      if (isClient) {
+        config.module.rules.unshift({
+          test: /\.worker\.(c|m)?js$/i,
+          use: { loader: "worker-loader" },
+          exclude: /(node_modules)/,
+        })
+        config.module.rules.push({
+          test: /\.md$/i,
+          use: { loader: "raw-loader" },
+          exclude: /(node_modules)/,
+        })
       }
     },
     parallel: true,

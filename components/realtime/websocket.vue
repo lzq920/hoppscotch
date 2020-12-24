@@ -1,6 +1,6 @@
 <template>
   <div class="page">
-    <pw-section class="blue" :label="$t('request')" ref="request">
+    <pw-section class="blue" :label="$t('request')" ref="request" no-legend>
       <ul>
         <li>
           <label for="websocket-url">{{ $t("url") }}</label>
@@ -11,12 +11,20 @@
             :class="{ error: !urlValid }"
             v-model="url"
             @keyup.enter="urlValid ? toggleConnection() : null"
+            class="md:rounded-bl-lg"
+            :placeholder="$t('url')"
           />
         </li>
         <div>
           <li>
             <label for="connect" class="hide-on-small-screen">&nbsp;</label>
-            <button :disabled="!urlValid" id="connect" name="connect" @click="toggleConnection">
+            <button
+              :disabled="!urlValid"
+              id="connect"
+              name="connect"
+              @click="toggleConnection"
+              class="rounded-b-lg md:rounded-bl-none md:rounded-br-lg"
+            >
               {{ !connectionState ? $t("connect") : $t("disconnect") }}
               <span>
                 <i class="material-icons">
@@ -29,7 +37,7 @@
       </ul>
     </pw-section>
 
-    <pw-section class="purple" :label="$t('communication')" id="response" ref="response">
+    <pw-section class="purple" :label="$t('communication')" id="response" ref="response" no-legend>
       <ul>
         <li>
           <log :title="$t('log')" :log="communication.log" />
@@ -47,12 +55,19 @@
             @keyup.enter="connectionState ? sendMessage() : null"
             @keyup.up="connectionState ? walkHistory('up') : null"
             @keyup.down="connectionState ? walkHistory('down') : null"
+            class="md:rounded-bl-lg"
           />
         </li>
         <div>
           <li>
             <label for="send" class="hide-on-small-screen">&nbsp;</label>
-            <button id="send" name="send" :disabled="!connectionState" @click="sendMessage">
+            <button
+              id="send"
+              name="send"
+              :disabled="!connectionState"
+              @click="sendMessage"
+              class="rounded-b-lg md:rounded-bl-none md:rounded-br-lg"
+            >
               {{ $t("send") }}
               <span>
                 <i class="material-icons">send</i>
@@ -66,13 +81,14 @@
 </template>
 
 <script>
-import { wsValid } from "~/helpers/utils/valid"
+import debounce from "~/helpers/utils/debounce"
 
 export default {
   data() {
     return {
       connectionState: false,
       url: "wss://echo.websocket.org",
+      isUrlValid: true,
       socket: null,
       communication: {
         log: null,
@@ -81,12 +97,32 @@ export default {
       currentIndex: -1, //index of the message log array to put in input box
     }
   },
+  mounted() {
+    if (process.browser) {
+      this.worker = this.$worker.createRejexWorker()
+      this.worker.addEventListener("message", this.workerResponseHandler)
+    }
+  },
+  destroyed() {
+    this.worker.terminate()
+  },
   computed: {
     urlValid() {
-      return wsValid(this.url)
+      return this.isUrlValid
+    },
+  },
+  watch: {
+    url(val) {
+      this.debouncer()
     },
   },
   methods: {
+    debouncer: debounce(function () {
+      this.worker.postMessage({ type: "ws", url: this.url })
+    }, 1000),
+    workerResponseHandler({ data }) {
+      if (data.url === this.url) this.isUrlValid = data.result
+    },
     toggleConnection() {
       // If it is connecting:
       if (!this.connectionState) return this.connect()
@@ -147,7 +183,9 @@ export default {
       }
     },
     disconnect() {
-      this.socket.close()
+      if (this.socket) {
+        this.socket.close()
+      }
     },
     handleError(error) {
       this.disconnect()

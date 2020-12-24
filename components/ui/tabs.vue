@@ -1,7 +1,7 @@
 <template>
   <div class="tabs-wrapper">
     <div class="tabs">
-      <ul>
+      <ul :class="styles">
         <li
           v-for="(tab, index) in tabs"
           :class="{ 'is-active': tab.isActive }"
@@ -57,6 +57,9 @@
         @apply text-sm;
         @apply rounded-lg;
         @apply cursor-pointer;
+        @apply transition-colors;
+        @apply ease-in-out;
+        @apply duration-150;
 
         .material-icons {
           @apply m-4;
@@ -90,6 +93,13 @@
 
 <script>
 export default {
+  props: {
+    styles: {
+      type: String,
+      default: "",
+    },
+  },
+
   data() {
     return {
       tabs: [],

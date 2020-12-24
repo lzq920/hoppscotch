@@ -1,43 +1,38 @@
 <template>
   <modal v-if="show" @close="hideModal">
     <div slot="header">
-      <ul>
-        <li>
-          <div class="row-wrapper">
-            <h3 class="title">{{ $t("edit_environment") }}</h3>
-            <div>
-              <button class="icon" @click="hideModal">
-                <closeIcon class="material-icons" />
-              </button>
-            </div>
-          </div>
-        </li>
-      </ul>
+      <div class="row-wrapper">
+        <h3 class="title">{{ $t("edit_environment") }}</h3>
+        <div>
+          <button class="icon" @click="hideModal">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+      </div>
     </div>
-    <div slot="body">
-      <ul>
-        <li>
-          <input
-            type="text"
-            v-model="name"
-            :placeholder="editingEnvironment.name"
-            @keyup.enter="saveEnvironment"
-          />
-        </li>
-      </ul>
-      <ul>
-        <li>
-          <div class="row-wrapper">
-            <label for="variableList">{{ $t("env_variable_list") }}</label>
-            <div>
-              <button class="icon" @click="clearContent($event)" v-tooltip.bottom="$t('clear')">
-                <i class="material-icons">clear_all</i>
-              </button>
-            </div>
-          </div>
-        </li>
-      </ul>
-      <ul v-for="(variable, index) in this.editingEnvCopy.variables" :key="index">
+    <div slot="body" class="flex flex-col">
+      <label for="selectLabel">{{ $t("label") }}</label>
+      <input
+        type="text"
+        id="selectLabel"
+        v-model="name"
+        :placeholder="editingEnvironment.name"
+        @keyup.enter="saveEnvironment"
+      />
+      <div class="row-wrapper">
+        <label for="variableList">{{ $t("env_variable_list") }}</label>
+        <div>
+          <button class="icon" @click="clearContent($event)" v-tooltip.bottom="$t('clear')">
+            <i class="material-icons">clear_all</i>
+          </button>
+        </div>
+      </div>
+      <ul
+        v-for="(variable, index) in this.editingEnvCopy.variables"
+        :key="index"
+        class="border-b border-dashed divide-y md:divide-x border-brdColor divide-dashed divide-brdColor md:divide-y-0"
+        :class="{ 'border-t': index == 0 }"
+      >
         <li>
           <input
             :placeholder="$t('parameter_count', { count: index + 1 })"
@@ -75,7 +70,7 @@
               v-tooltip.bottom="$t('delete')"
               id="variable"
             >
-              <deleteIcon class="material-icons" />
+              <i class="material-icons">delete</i>
             </button>
           </li>
         </div>
@@ -107,14 +102,8 @@
 
 <script>
 import { fb } from "~/helpers/fb"
-import closeIcon from "~/static/icons/close-24px.svg?inline"
-import deleteIcon from "~/static/icons/delete-24px.svg?inline"
 
 export default {
-  components: {
-    closeIcon,
-    deleteIcon,
-  },
   props: {
     show: Boolean,
     editingEnvironment: Object,
@@ -123,6 +112,7 @@ export default {
   data() {
     return {
       name: undefined,
+      doneButton: '<i class="material-icons">done</i>',
     }
   },
   watch: {

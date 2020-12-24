@@ -43,15 +43,14 @@
             </button>
           </div>
           <div>
-            <button class="icon" @click="removeFolder" v-close-popover>
-              <deleteIcon class="material-icons" />
+            <button class="icon" @click="confirmRemove = true" v-close-popover>
+              <i class="material-icons">delete</i>
               <span>{{ $t("delete") }}</span>
             </button>
           </div>
         </template>
       </v-popover>
     </div>
-
     <div v-show="showChildren || isFiltered">
       <ul class="flex-col">
         <li
@@ -71,7 +70,11 @@
         </li>
       </ul>
       <ul v-if="folder.folders && folder.folders.length" class="flex-col">
-        <li v-for="(subFolder, subFolderIndex) in folder.folders" :key="subFolder.name">
+        <li
+          v-for="(subFolder, subFolderIndex) in folder.folders"
+          :key="subFolder.name"
+          class="ml-8 border-l border-brdColor"
+        >
           <folder
             :folder="subFolder"
             :folder-index="subFolderIndex"
@@ -84,16 +87,25 @@
           />
         </li>
       </ul>
+      <ul v-if="folder.folders && folder.folders.length === 0 && folder.requests && folder.requests.length === 0">
+        <li class="flex ml-8 border-l border-brdColor">
+          <p class="info"><i class="material-icons">not_interested</i> {{ $t("folder_empty") }}</p>
+        </li>
+      </ul>
     </div>
+    <confirm-modal
+      :show="confirmRemove"
+      :title="$t('are_you_sure_remove_folder')"
+      @hide-modal="confirmRemove = false"
+      @resolve="removeFolder"
+    />
   </div>
 </template>
 
 <script>
 import { fb } from "~/helpers/fb"
-import deleteIcon from "~/static/icons/delete-24px.svg?inline"
 
 export default {
-  components: { deleteIcon },
   name: "folder",
   props: {
     folder: Object,
@@ -107,6 +119,7 @@ export default {
     return {
       showChildren: false,
       dragging: false,
+      confirmRemove: false,
     }
   },
   methods: {
@@ -121,7 +134,6 @@ export default {
       this.showChildren = !this.showChildren
     },
     removeFolder() {
-      if (!confirm(this.$t("are_you_sure_remove_folder"))) return
       this.$store.commit("postwoman/removeFolder", {
         collectionIndex: this.$props.collectionIndex,
         folderName: this.$props.folder.name,

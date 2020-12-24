@@ -1,6 +1,6 @@
 <template>
   <div class="page">
-    <pw-section class="blue" :label="$t('request')" ref="request">
+    <pw-section class="blue" :label="$t('request')" ref="request" no-legend>
       <ul>
         <li>
           <label for="server">{{ $t("server") }}</label>
@@ -10,12 +10,20 @@
             :class="{ error: !serverValid }"
             v-model="server"
             @keyup.enter="serverValid ? toggleSSEConnection() : null"
+            class="md:rounded-bl-lg"
+            :placeholder="$t('url')"
           />
         </li>
         <div>
           <li>
             <label for="start" class="hide-on-small-screen">&nbsp;</label>
-            <button :disabled="!serverValid" id="start" name="start" @click="toggleSSEConnection">
+            <button
+              :disabled="!serverValid"
+              id="start"
+              name="start"
+              @click="toggleSSEConnection"
+              class="rounded-b-lg md:rounded-bl-none md:rounded-br-lg"
+            >
               {{ !connectionSSEState ? $t("start") : $t("stop") }}
               <span>
                 <i class="material-icons">
@@ -28,7 +36,7 @@
       </ul>
     </pw-section>
 
-    <pw-section class="purple" :label="$t('communication')" id="response" ref="response">
+    <pw-section class="purple" :label="$t('communication')" id="response" ref="response" no-legend>
       <ul>
         <li>
           <log :title="$t('events')" :log="events.log" />
@@ -40,13 +48,14 @@
 </template>
 
 <script>
-import { httpValid } from "~/helpers/utils/valid"
+import debounce from "~/helpers/utils/debounce"
 
 export default {
   data() {
     return {
       connectionSSEState: false,
       server: "https://express-eventsource.herokuapp.com/events",
+      isUrlValid: true,
       sse: null,
       events: {
         log: null,
@@ -54,12 +63,32 @@ export default {
       },
     }
   },
+  watch: {
+    server(val) {
+      this.debouncer()
+    },
+  },
+  mounted() {
+    if (process.browser) {
+      this.worker = this.$worker.createRejexWorker()
+      this.worker.addEventListener("message", this.workerResponseHandler)
+    }
+  },
+  destroyed() {
+    this.worker.terminate()
+  },
   computed: {
     serverValid() {
-      return httpValid(this.server)
+      return this.isUrlValid
     },
   },
   methods: {
+    debouncer: debounce(function () {
+      this.worker.postMessage({ type: "sse", url: this.server })
+    }, 1000),
+    workerResponseHandler({ data }) {
+      if (data.url === this.url) this.isUrlValid = data.result
+    },
     toggleSSEConnection() {
       // If it is connecting:
       if (!this.connectionSSEState) return this.start()

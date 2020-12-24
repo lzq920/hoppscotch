@@ -1,6 +1,6 @@
-const PASS = "PASS"
-const FAIL = "FAIL"
-const ERROR = "ERROR"
+export const PASS = "PASS"
+export const FAIL = "FAIL"
+export const ERROR = "ERROR"
 
 const styles = {
   [PASS]: { icon: "check", class: "success-response" },
@@ -89,10 +89,10 @@ class Expectation {
     }
   }
   _fail(message) {
-    this._testReports.push({ result: FAIL, message })
+    return this._testReports.push({ result: FAIL, message })
   }
-  _pass(message) {
-    this._testReports.push({ result: PASS })
+  _pass() {
+    return this._testReports.push({ result: PASS })
   }
   // TEST METHODS DEFINED BELOW
   // these are the usual methods that would follow expect(...)
@@ -109,39 +109,75 @@ class Expectation {
         )
   }
   toBeLevel2xx() {
-    const code = parseInt(this.expectValue)
+    const code = parseInt(this.expectValue, 10)
     if (Number.isNaN(code)) {
       return this._fail(`Expected 200-level status but could not parse value ${this.expectValue}`)
     }
-    return this._satisfies(code >= 200 && code < 300)
+    return this._satisfies(code >= 200 && code < 300, true)
       ? this._pass()
       : this._fail(this._fmtNot(`Expected ${this.expectValue} to (not)be 200-level status`))
   }
   toBeLevel3xx() {
-    const code = parseInt(this.expectValue)
+    const code = parseInt(this.expectValue, 10)
     if (Number.isNaN(code)) {
       return this._fail(`Expected 300-level status but could not parse value ${this.expectValue}`)
     }
-    return this._satisfies(code >= 300 && code < 400)
+    return this._satisfies(code >= 300 && code < 400, true)
       ? this._pass()
       : this._fail(this._fmtNot(`Expected ${this.expectValue} to (not)be 300-level status`))
   }
   toBeLevel4xx() {
-    const code = parseInt(this.expectValue)
+    const code = parseInt(this.expectValue, 10)
     if (Number.isNaN(code)) {
       return this._fail(`Expected 400-level status but could not parse value ${this.expectValue}`)
     }
-    return this._satisfies(code >= 400 && code < 500)
+    return this._satisfies(code >= 400 && code < 500, true)
       ? this._pass()
       : this._fail(this._fmtNot(`Expected ${this.expectValue} to (not)be 400-level status`))
   }
   toBeLevel5xx() {
-    const code = parseInt(this.expectValue)
+    const code = parseInt(this.expectValue, 10)
     if (Number.isNaN(code)) {
       return this._fail(`Expected 500-level status but could not parse value ${this.expectValue}`)
     }
-    return this._satisfies(code >= 500 && code < 600)
+    return this._satisfies(code >= 500 && code < 600, true)
       ? this._pass()
       : this._fail(this._fmtNot(`Expected ${this.expectValue} to (not)be 500-level status`))
+  }
+  toHaveLength(expectedLength) {
+    const actualLength = this.expectValue.length
+    return this._satisfies(actualLength, expectedLength)
+      ? this._pass()
+      : this._fail(
+          this._fmtNot(
+            `Expected length to be ${expectedLength} but actual length was ${actualLength}`
+          )
+        )
+  }
+  toBeType(expectedType) {
+    const actualType = typeof this.expectValue
+    if (
+      ![
+        "string",
+        "boolean",
+        "number",
+        "object",
+        "undefined",
+        "bigint",
+        "symbol",
+        "function",
+      ].includes(expectedType)
+    ) {
+      return this._fail(
+        this._fmtNot(
+          `Argument for toBeType should be "string", "boolean", "number", "object", "undefined", "bigint", "symbol" or "function"`
+        )
+      )
+    }
+    return this._satisfies(actualType, expectedType)
+      ? this._pass()
+      : this._fail(
+          this._fmtNot(`Expected type to be "${expectedType}" but actual type was "${actualType}"`)
+        )
   }
 }

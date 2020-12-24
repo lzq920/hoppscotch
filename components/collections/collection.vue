@@ -12,7 +12,7 @@
       <button class="icon" @click="toggleShowChildren">
         <i class="material-icons" v-show="!showChildren && !isFiltered">arrow_right</i>
         <i class="material-icons" v-show="showChildren || isFiltered">arrow_drop_down</i>
-        <folderIcon class="material-icons" />
+        <i class="material-icons">folder</i>
         <span>{{ collection.name }}</span>
       </button>
       <div>
@@ -46,8 +46,8 @@
               </button>
             </div>
             <div>
-              <button class="icon" @click="removeCollection" v-close-popover>
-                <deleteIcon class="material-icons" />
+              <button class="icon" @click="confirmRemove = true" v-close-popover>
+                <i class="material-icons">delete</i>
                 <span>{{ $t("delete") }}</span>
               </button>
             </div>
@@ -55,7 +55,6 @@
         </v-popover>
       </div>
     </div>
-
     <div v-show="showChildren || isFiltered">
       <ul class="flex-col">
         <li
@@ -75,9 +74,6 @@
             @edit-request="$emit('edit-request', $event)"
           />
         </li>
-        <li v-if="collection.folders.length === 0 && collection.requests.length === 0">
-          <label>{{ $t("collection_empty") }}</label>
-        </li>
       </ul>
       <ul class="flex-col">
         <li
@@ -96,17 +92,30 @@
           />
         </li>
       </ul>
+      <ul>
+        <li
+          v-if="collection.folders.length === 0 && collection.requests.length === 0"
+          class="flex ml-8 border-l border-brdColor"
+        >
+          <p class="info">
+            <i class="material-icons">not_interested</i> {{ $t("collection_empty") }}
+          </p>
+        </li>
+      </ul>
     </div>
+    <confirm-modal
+      :show="confirmRemove"
+      :title="$t('are_you_sure_remove_collection')"
+      @hide-modal="confirmRemove = false"
+      @resolve="removeCollection"
+    />
   </div>
 </template>
 
 <script>
 import { fb } from "~/helpers/fb"
-import folderIcon from "~/static/icons/folder-24px.svg?inline"
-import deleteIcon from "~/static/icons/delete-24px.svg?inline"
 
 export default {
-  components: { folderIcon, deleteIcon },
   props: {
     collectionIndex: Number,
     collection: Object,
@@ -118,6 +127,7 @@ export default {
       showChildren: false,
       dragging: false,
       selectedFolder: {},
+      confirmRemove: false,
     }
   },
   methods: {
@@ -132,7 +142,6 @@ export default {
       this.showChildren = !this.showChildren
     },
     removeCollection() {
-      if (!confirm(this.$t("are_you_sure_remove_collection"))) return
       this.$store.commit("postwoman/removeCollection", {
         collectionIndex: this.collectionIndex,
       })

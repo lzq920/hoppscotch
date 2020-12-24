@@ -12,6 +12,7 @@
       :spellcheck="spellcheck"
       :autocapitalize="autocapitalize"
       :autocorrect="spellcheck"
+      :class="styles"
     />
     <ul
       class="suggestions"
@@ -46,9 +47,9 @@
     @apply mx-2;
     @apply left-0;
     @apply z-50;
-    @apply transition-transform;
+    @apply transition;
     @apply ease-in-out;
-    @apply duration-200;
+    @apply duration-150;
     @apply shadow-lg;
 
     top: calc(100% - 8px);
@@ -57,7 +58,8 @@
     li {
       @apply w-full;
       @apply block;
-      @apply p-2;
+      @apply py-2;
+      @apply px-4;
       @apply text-sm;
       @apply font-mono;
       @apply font-normal;
@@ -107,6 +109,11 @@ export default {
       type: String,
       default: "",
       required: false,
+    },
+
+    styles: {
+      type: String,
+      default: "",
     },
   },
 
