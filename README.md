@@ -443,10 +443,10 @@ _Sample keys only works with the [production build](https://hoppscotch.io)._
 docker pull hoppscotch/hoppscotch
 
 #build
-docker build -t hoppscotch:latest .
+docker build -t hoppscotch/hoppscotch:latest .
 
 #run
-docker run -p 3000:3000 hoppscotch:latest
+docker run -p 3000:3000 hoppscotch/hoppscotch:latest
 ```
 
 <details>
@@ -459,10 +459,10 @@ docker run -p 3000:3000 hoppscotch:latest
 docker pull liyasthomas/postwoman
 
 #build
-docker build -t postwoman:latest .
+docker build -t liyasthomas/postwoman:latest .
 
 #run
-docker run -p 3000:3000 postwoman:latest
+docker run -p 3000:3000 liyasthomas/postwoman:latest
 ```
 
 ---
@@ -548,11 +548,18 @@ Become a financial contributor and help us sustain our community [[Support](#sup
 </p>
 
 <p align="center">
-<a href="https://github.com/gianlucapisati" target="_blank" rel="noopener">
+<a href="https://github.com/diningcity-group" target="_blank" rel="noopener">
 <img
   width="64"
-	src="https://github.com/gianlucapisati.png?size=64"
-	alt="Gianluca Pisati"
+	src="https://github.com/diningcity-group.png?size=64"
+	alt="DiningCity"
+/>
+</a>
+<a href="https://github.com/rithish" target="_blank" rel="noopener">
+<img
+  width="64"
+	src="https://github.com/rithish.png?size=64"
+	alt="Rithish"
 />
 </a>
 <a href="https://github.com/kcomain" target="_blank" rel="noopener">
@@ -581,13 +588,6 @@ Become a financial contributor and help us sustain our community [[Support](#sup
   width="64"
 	src="https://github.com/pantharshit00.png?size=64"
 	alt="Harshit Pant"
-/>
-</a>
-<a href="https://github.com/janpio" target="_blank" rel="noopener">
-<img
-  width="64"
-	src="https://github.com/janpio.png?size=64"
-	alt="Jan Piotrowski"
 />
 </a>
 <a href="https://github.com/ankumar" target="_blank" rel="noopener">
