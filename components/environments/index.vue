@@ -1,5 +1,5 @@
 <template>
-  <pw-section class="green" icon="history" :label="$t('environments')" ref="environments" no-legend>
+  <AppSection icon="history" :label="$t('environments')" ref="environments" no-legend>
     <div class="show-on-large-screen">
       <span class="select-wrapper">
         <select
@@ -17,14 +17,14 @@
         </select>
       </span>
     </div>
-    <add-environment :show="showModalAdd" @hide-modal="displayModalAdd(false)" />
-    <edit-environment
+    <EnvironmentsAdd :show="showModalAdd" @hide-modal="displayModalAdd(false)" />
+    <EnvironmentsEdit
       :show="showModalEdit"
       :editingEnvironment="editingEnvironment"
       :editingEnvironmentIndex="editingEnvironmentIndex"
       @hide-modal="displayModalEdit(false)"
     />
-    <import-export-environment
+    <EnvironmentsImportExport
       :show="showModalImportExport"
       @hide-modal="displayModalImportExport(false)"
     />
@@ -47,7 +47,7 @@
     <div class="virtual-list">
       <ul class="flex-col">
         <li v-for="(environment, index) in environments" :key="environment.name">
-          <environment
+          <EnvironmentsEnvironment
             :environmentIndex="index"
             :environment="environment"
             @edit-environment="editEnvironment(environment, index)"
@@ -55,17 +55,18 @@
         </li>
       </ul>
     </div>
-  </pw-section>
+  </AppSection>
 </template>
 
 <style scoped lang="scss">
 .virtual-list {
-  max-height: calc(100vh - 232px);
+  max-height: calc(100vh - 270px);
 }
 </style>
 
 <script>
 import { fb } from "~/helpers/fb"
+import { getSettingSubject } from "~/newstore/settings"
 
 export default {
   data() {
@@ -80,6 +81,11 @@ export default {
         name: "My Environment Variables",
         variables: [],
       },
+    }
+  },
+  subscriptions() {
+    return {
+      SYNC_ENVIRONMENTS: getSettingSubject("syncEnvironments"),
     }
   },
   computed: {
@@ -103,8 +109,8 @@ export default {
         })
     },
     environments: {
-      handler(val) {
-        if (val.length === 0) {
+      handler({ length }) {
+        if (length === 0) {
           this.selectedEnvironmentIndex = -1
           this.$emit("use-environment", {
             environment: this.defaultEnvironment,
@@ -153,10 +159,8 @@ export default {
       this.$data.editingEnvironmentIndex = undefined
     },
     syncEnvironments() {
-      if (fb.currentUser !== null && fb.currentSettings[1]) {
-        if (fb.currentSettings[1].value) {
-          fb.writeEnvironments(JSON.parse(JSON.stringify(this.$store.state.postwoman.environments)))
-        }
+      if (fb.currentUser !== null && this.SYNC_ENVIRONMENTS) {
+        fb.writeEnvironments(JSON.parse(JSON.stringify(this.$store.state.postwoman.environments)))
       }
     },
   },

@@ -2,7 +2,7 @@
   <div class="page">
     <div class="content">
       <div class="page-columns inner-left">
-        <pw-section class="blue" :label="$t('request')" ref="request" no-legend>
+        <AppSection :label="$t('request')" ref="request" no-legend>
           <ul>
             <li class="shrink">
               <label for="method">{{ $t("method") }}</label>
@@ -38,7 +38,7 @@
             <li>
               <label for="url">{{ $t("url") }}</label>
               <input
-                v-if="!this.$store.state.postwoman.settings.EXPERIMENTAL_URL_BAR_ENABLED"
+                v-if="!EXPERIMENTAL_URL_BAR_ENABLED"
                 :class="{ error: !isValidURL }"
                 class="border-dashed md:border-l border-brdColor"
                 @keyup.enter="isValidURL ? sendRequest() : null"
@@ -50,7 +50,7 @@
                 @input="pathInputHandler"
                 :placeholder="$t('url')"
               />
-              <url-field v-model="uri" v-else />
+              <SmartUrlField v-model="uri" v-else />
             </li>
             <li class="shrink">
               <label class="hide-on-small-screen" for="send">&nbsp;</label>
@@ -84,7 +84,7 @@
             <ul>
               <li>
                 <label for="contentType" class="text-sm">{{ $t("content_type") }}</label>
-                <autocomplete
+                <SmartAutoComplete
                   :source="validContentTypes"
                   :spellcheck="false"
                   v-model="contentType"
@@ -96,62 +96,18 @@
               <li>
                 <div class="row-wrapper">
                   <span>
-                    <pw-toggle v-if="canListParameters" :on="rawInput" @change="rawInput = $event">
-                      {{ $t("raw_input") }}
-                    </pw-toggle>
-                  </span>
-                  <div>
-                    <label for="attachment" class="p-0">
-                      <button
-                        class="icon"
-                        @click="$refs.attachment.click()"
-                        v-tooltip="
-                          files.length === 0 ? $t('upload_file') : filenames.replace('<br/>', '')
-                        "
-                      >
-                        <i class="material-icons">attach_file</i>
-                        <span>
-                          {{
-                            files.length === 0
-                              ? "No files"
-                              : files.length == 1
-                              ? "1 file"
-                              : files.length + " files"
-                          }}
-                        </span>
-                      </button>
-                    </label>
-                    <input
-                      ref="attachment"
-                      name="attachment"
-                      type="file"
-                      @change="uploadAttachment"
-                      multiple
-                    />
-                    <label for="payload" class="p-0">
-                      <button
-                        class="icon"
-                        @click="$refs.payload.click()"
-                        v-tooltip="$t('import_json')"
-                      >
-                        <i class="material-icons">post_add</i>
-                      </button>
-                    </label>
-                    <input ref="payload" name="payload" type="file" @change="uploadPayload" />
-                    <button
-                      class="icon"
-                      ref="prettifyRequest"
-                      @click="prettifyRequestBody"
-                      v-tooltip="$t('prettify_body')"
-                      v-if="rawInput && this.contentType.endsWith('json')"
+                    <SmartToggle
+                      v-if="canListParameters"
+                      :on="rawInput"
+                      @change="rawInput = $event"
                     >
-                      <i class="material-icons">photo_filter</i>
-                    </button>
-                  </div>
+                      {{ $t("raw_input") }}
+                    </SmartToggle>
+                  </span>
                 </div>
               </li>
             </ul>
-            <http-body-parameters
+            <HttpBodyParameters
               v-if="!rawInput"
               :bodyParams="bodyParams"
               @clear-content="clearContent"
@@ -159,36 +115,15 @@
               @remove-request-body-param="removeRequestBodyParam"
               @add-request-body-param="addRequestBodyParam"
             />
-            <div v-else>
-              <ul>
-                <li>
-                  <div class="row-wrapper">
-                    <label for="rawBody">{{ $t("raw_request_body") }}</label>
-                    <div>
-                      <button
-                        class="icon"
-                        @click="clearContent('rawParams', $event)"
-                        v-tooltip.bottom="$t('clear')"
-                      >
-                        <i class="material-icons">clear_all</i>
-                      </button>
-                    </div>
-                  </div>
-                  <ace-editor
-                    v-model="rawParams"
-                    :lang="rawInputEditorLang"
-                    :options="{
-                      maxLines: '16',
-                      minLines: '8',
-                      fontSize: '16px',
-                      autoScrollEditorIntoView: true,
-                      showPrintMargin: false,
-                      useWorker: false,
-                    }"
-                  />
-                </li>
-              </ul>
-            </div>
+            <HttpRawBody
+              v-else
+              :rawParams="rawParams"
+              :contentType="contentType"
+              :rawInput="rawInput"
+              @clear-content="clearContent"
+              @update-raw-body="updateRawBody"
+              @update-raw-input="updateRawInput = (value) => (rawInput = value)"
+            />
           </div>
           <div class="row-wrapper">
             <span>
@@ -238,42 +173,42 @@
               </button>
             </span>
           </div>
-        </pw-section>
+        </AppSection>
 
         <section id="options">
-          <tabs>
-            <tab
+          <SmartTabs>
+            <SmartTab
               :id="'params'"
               :label="
                 $t('parameters') + `${params.length !== 0 ? ' \xA0 • \xA0 ' + params.length : ''}`
               "
               :selected="true"
             >
-              <http-parameters
+              <HttpParameters
                 :params="params"
                 @clear-content="clearContent"
                 @remove-request-param="removeRequestParam"
                 @add-request-param="addRequestParam"
               />
-            </tab>
+            </SmartTab>
 
-            <tab
+            <SmartTab
               :id="'headers'"
               :label="
                 $t('headers') + `${headers.length !== 0 ? ' \xA0 • \xA0 ' + headers.length : ''}`
               "
             >
-              <http-headers
+              <HttpHeaders
                 :headers="headers"
                 @clear-content="clearContent"
                 @set-route-query-state="setRouteQueryState"
                 @remove-request-header="removeRequestHeader"
                 @add-request-header="addRequestHeader"
               />
-            </tab>
+            </SmartTab>
 
-            <tab :id="'authentication'" :label="$t('authentication')">
-              <pw-section class="teal" :label="$t('authentication')" ref="authentication" no-legend>
+            <SmartTab :id="'authentication'" :label="$t('authentication')">
+              <AppSection :label="$t('authentication')" ref="authentication" no-legend>
                 <ul>
                   <li>
                     <div class="row-wrapper">
@@ -345,13 +280,13 @@
                   </li>
                 </ul>
                 <div class="row-wrapper">
-                  <pw-toggle :on="!urlExcludes.auth" @change="setExclude('auth', !$event)">
+                  <SmartToggle :on="!URL_EXCLUDES.auth" @change="setExclude('auth', !$event)">
                     {{ $t("include_in_url") }}
-                  </pw-toggle>
+                  </SmartToggle>
                 </div>
-              </pw-section>
+              </AppSection>
 
-              <pw-section
+              <AppSection
                 v-if="showTokenRequest"
                 class="red"
                 label="Access Token Request"
@@ -469,11 +404,11 @@
                     </button>
                   </li>
                 </ul>
-              </pw-section>
-            </tab>
+              </AppSection>
+            </SmartTab>
 
-            <tab :id="'pre_request_script'" :label="$t('pre_request_script')">
-              <pw-section
+            <SmartTab :id="'pre_request_script'" :label="$t('pre_request_script')">
+              <AppSection
                 v-if="showPreRequestScript"
                 class="orange"
                 :label="$t('pre_request_script')"
@@ -483,7 +418,7 @@
                 <ul>
                   <li>
                     <div class="row-wrapper">
-                      <label for="generatedCode">{{ $t("javascript_code") }}</label>
+                      <label>{{ $t("javascript_code") }}</label>
                       <div>
                         <a
                           href="https://github.com/hoppscotch/hoppscotch/wiki/Pre-Request-Scripts"
@@ -496,7 +431,7 @@
                         </a>
                       </div>
                     </div>
-                    <js-editor
+                    <SmartJsEditor
                       v-model="preRequestScript"
                       :options="{
                         maxLines: '16',
@@ -507,14 +442,15 @@
                         useWorker: false,
                       }"
                       styles="rounded-b-lg"
+                      completeMode="pre"
                     />
                   </li>
                 </ul>
-              </pw-section>
-            </tab>
+              </AppSection>
+            </SmartTab>
 
-            <tab :id="'tests'" :label="$t('tests')">
-              <pw-section
+            <SmartTab :id="'tests'" :label="$t('tests')">
+              <AppSection
                 v-if="testsEnabled"
                 class="orange"
                 :label="$t('tests')"
@@ -524,7 +460,7 @@
                 <ul>
                   <li>
                     <div class="row-wrapper">
-                      <label for="generatedCode">{{ $t("javascript_code") }}</label>
+                      <label>{{ $t("javascript_code") }}</label>
                       <div>
                         <a
                           href="https://github.com/hoppscotch/hoppscotch/wiki/Post-Request-Tests"
@@ -537,7 +473,7 @@
                         </a>
                       </div>
                     </div>
-                    <js-editor
+                    <SmartJsEditor
                       v-model="testScript"
                       :options="{
                         maxLines: '16',
@@ -548,6 +484,7 @@
                         useWorker: false,
                       }"
                       styles="rounded-b-lg"
+                      completeMode="test"
                     />
                     <div v-if="testReports.length !== 0">
                       <div class="row-wrapper">
@@ -583,71 +520,50 @@
                     </div>
                   </li>
                 </ul>
-              </pw-section>
-            </tab>
-          </tabs>
+              </AppSection>
+            </SmartTab>
+          </SmartTabs>
         </section>
 
-        <pw-section class="purple" id="response" :label="$t('response')" ref="response">
-          <ul>
-            <li>
-              <label for="status">{{ $t("status") }}</label>
-              <input
-                :class="[
-                  statusCategory ? statusCategory.className : '',
-                  response.status ? '' : 'rounded-b-lg',
-                ]"
-                :value="response.status || $t('waiting_send_req')"
-                ref="status"
-                id="status"
-                name="status"
-                readonly
-                type="text"
-              />
-            </li>
-          </ul>
-          <div v-if="response.body && response.body !== $t('loading')">
-            <response-body-renderer :response="response" />
-          </div>
-        </pw-section>
+        <HttpResponse :response="response" :active="runningRequest" ref="response" />
       </div>
 
       <aside v-if="activeSidebar" class="sticky-inner inner-right lg:max-w-md">
         <section>
-          <tabs>
-            <tab :id="'history'" :label="$t('history')" :selected="true">
-              <history @useHistory="handleUseHistory" ref="historyComponent" />
-            </tab>
+          <SmartTabs>
+            <SmartTab :id="'history'" :label="$t('history')" :selected="true">
+              <History :page="'rest'" @useHistory="handleUseHistory" ref="historyComponent" />
+            </SmartTab>
 
-            <tab :id="'collections'" :label="$t('collections')">
-              <collections />
-            </tab>
+            <SmartTab :id="'collections'" :label="$t('collections')">
+              <Collections />
+            </SmartTab>
 
-            <tab :id="'env'" :label="$t('environments')">
-              <environments @use-environment="useSelectedEnvironment($event)" />
-            </tab>
+            <SmartTab :id="'env'" :label="$t('environments')">
+              <Environments @use-environment="useSelectedEnvironment($event)" />
+            </SmartTab>
 
-            <tab :id="'notes'" :label="$t('notes')">
-              <notes />
-            </tab>
-          </tabs>
+            <SmartTab :id="'notes'" :label="$t('notes')">
+              <HttpNotes />
+            </SmartTab>
+          </SmartTabs>
         </section>
       </aside>
     </div>
 
-    <save-request-as
+    <CollectionsSaveRequest
       :show="showSaveRequestModal"
       @hide-modal="hideRequestModal"
       :editing-request="editRequest"
     />
 
-    <import-curl
+    <HttpImportCurl
       :show="showCurlImportModal"
       @hide-modal="showCurlImportModal = false"
       @handle-import="handleImport"
     />
 
-    <codegen-modal
+    <HttpCodegenModal
       :show="showCodegenModal"
       :requestTypeProp="requestType"
       :requestCode="requestCode"
@@ -655,7 +571,7 @@
       @set-request-type="setRequestType"
     />
 
-    <token-list
+    <HttpTokenList
       :show="showTokenListModal"
       :tokens="tokens"
       @clear-content="clearContent"
@@ -664,7 +580,7 @@
       @hide-modal="showTokenListModal = false"
     />
 
-    <modal v-if="showTokenRequestList" @close="showTokenRequestList = false">
+    <SmartModal v-if="showTokenRequestList" @close="showTokenRequestList = false">
       <div slot="header">
         <div class="row-wrapper">
           <h3 class="title">{{ $t("manage_token_req") }}</h3>
@@ -730,7 +646,7 @@
           </span>
         </div>
       </div>
-    </modal>
+    </SmartModal>
   </div>
 </template>
 
@@ -744,13 +660,13 @@ import parseTemplateString from "~/helpers/templating"
 import { tokenRequest, oauthRedirect } from "~/helpers/oauth"
 import { cancelRunningRequest, sendNetworkRequest } from "~/helpers/network"
 import { fb } from "~/helpers/fb"
-import { getEditorLangForMimeType } from "~/helpers/editorutils"
 import { hasPathParams, addPathParamsToVariables, getQueryParams } from "~/helpers/requestParams"
 import { parseUrlAndPath } from "~/helpers/utils/uri"
 import { httpValid } from "~/helpers/utils/valid"
 import { knownContentTypes, isJSONContentType } from "~/helpers/utils/contenttypes"
 import { generateCodeWithGenerator } from "~/helpers/codegen/codegen"
-import findStatusGroup from "~/helpers/findStatusGroup"
+import { getSettingSubject, applySetting } from "~/newstore/settings"
+import clone from "lodash/clone"
 
 export default {
   data() {
@@ -769,6 +685,8 @@ export default {
         status: "",
         headers: "",
         body: "",
+        duration: 0,
+        size: 0,
       },
       validContentTypes: knownContentTypes,
       paramsWatchEnabled: true,
@@ -777,7 +695,6 @@ export default {
       showTokenRequestList: false,
       showSaveRequestModal: false,
       editRequest: {},
-      urlExcludes: {},
       activeSidebar: true,
       fb,
       customMethod: false,
@@ -785,12 +702,6 @@ export default {
       filenames: "",
       navigatorShare: navigator.share,
       runningRequest: false,
-      settings: {
-        SCROLL_INTO_ENABLED:
-          typeof this.$store.state.postwoman.settings.SCROLL_INTO_ENABLED !== "undefined"
-            ? this.$store.state.postwoman.settings.SCROLL_INTO_ENABLED
-            : true,
-      },
       currentMethodIndex: 0,
       methodMenuItems: [
         "GET",
@@ -806,16 +717,18 @@ export default {
       ],
     }
   },
+  subscriptions() {
+    return {
+      SCROLL_INTO_ENABLED: getSettingSubject("SCROLL_INTO_ENABLED"),
+      PROXY_ENABLED: getSettingSubject("PROXY_ENABLED"),
+      URL_EXCLUDES: getSettingSubject("URL_EXCLUDES"),
+      EXPERIMENTAL_URL_BAR_ENABLED: getSettingSubject("EXPERIMENTAL_URL_BAR_ENABLED"),
+
+      SYNC_COLLECTIONS: getSettingSubject("syncCollections"),
+      SYNC_HISTORY: getSettingSubject("syncHistory"),
+    }
+  },
   watch: {
-    urlExcludes: {
-      deep: true,
-      handler() {
-        this.$store.commit("postwoman/applySetting", [
-          "URL_EXCLUDES",
-          Object.assign({}, this.urlExcludes),
-        ])
-      },
-    },
     canListParameters: {
       immediate: true,
       handler(canListParameters) {
@@ -852,9 +765,9 @@ export default {
         }
         let path = this.path
         let queryString = getQueryParams(newValue)
-          .map(({ key, value }) => `${key}=${value}`)
+          .map(({ key, value }) => `${key.trim()}=${value.trim()}`)
           .join("&")
-        queryString = queryString === "" ? "" : `?${queryString}`
+        queryString = queryString === "" ? "" : `?${encodeURI(queryString)}`
         if (path.includes("?")) {
           path = path.slice(0, path.indexOf("?")) + queryString
         } else {
@@ -915,6 +828,7 @@ export default {
     canListParameters() {
       return (
         this.contentType === "application/x-www-form-urlencoded" ||
+        this.contentType === "multipart/form-data" ||
         isJSONContentType(this.contentType)
       )
     },
@@ -1133,9 +1047,6 @@ export default {
         this.$store.commit("setState", { value, attribute: "rawInput" })
       },
     },
-    rawInputEditorLang() {
-      return getEditorLangForMimeType(this.contentType)
-    },
     requestType: {
       get() {
         return this.$store.state.request.requestType
@@ -1171,9 +1082,6 @@ export default {
     },
     requestName() {
       return this.name
-    },
-    statusCategory() {
-      return findStatusGroup(this.response.status)
     },
     isValidURL() {
       // if showPreRequestScript, we cannot determine if a URL is valid because the full string is not known ahead of time
@@ -1212,13 +1120,13 @@ export default {
         return bodyParams
           .filter((item) => (item.hasOwnProperty("active") ? item.active == true : true))
           .filter(({ key }) => !!key)
-          .map(({ key, value }) => `${key}=${encodeURIComponent(value)}`)
+          .map(({ key, value }) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
           .join("&")
       }
     },
     queryString() {
       const result = getQueryParams(this.params)
-        .map(({ key, value }) => `${key}=${encodeURIComponent(value)}`)
+        .map(({ key, value }) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
         .join("&")
       return result === "" ? "" : `?${result}`
     },
@@ -1319,7 +1227,7 @@ export default {
       this.requestType = entry.requestType
       this.testScript = entry.testScript
       this.testsEnabled = entry.usesPostScripts
-      if (this.settings.SCROLL_INTO_ENABLED) this.scrollInto("request")
+      if (this.SCROLL_INTO_ENABLED) this.scrollInto("request")
     },
     async makeRequest(auth, headers, requestBody, preRequestScript) {
       const requestOptions = {
@@ -1335,7 +1243,10 @@ export default {
         let environmentVariables = getEnvironmentVariablesFromScript(preRequestScript)
         environmentVariables = addPathParamsToVariables(this.params, environmentVariables)
         requestOptions.url = parseTemplateString(requestOptions.url, environmentVariables)
-        requestOptions.data = parseTemplateString(requestOptions.data, environmentVariables)
+        if (!(requestOptions.data instanceof FormData)) {
+          // TODO: Parse env variables for form data too
+          requestOptions.data = parseTemplateString(requestOptions.data, environmentVariables)
+        }
         for (let k in requestOptions.headers) {
           const kParsed = parseTemplateString(k, environmentVariables)
           const valParsed = parseTemplateString(requestOptions.headers[k], environmentVariables)
@@ -1346,14 +1257,14 @@ export default {
       if (typeof requestOptions.data === "string") {
         requestOptions.data = parseTemplateString(requestOptions.data)
       }
-      return await sendNetworkRequest(requestOptions, this.$store)
+      return await sendNetworkRequest(requestOptions)
     },
     cancelRequest() {
-      cancelRunningRequest(this.$store)
+      cancelRunningRequest()
     },
     async sendRequest() {
       this.$toast.clear()
-      if (this.settings.SCROLL_INTO_ENABLED) this.scrollInto("response")
+      if (this.SCROLL_INTO_ENABLED) this.scrollInto("response")
       if (!this.isValidURL) {
         this.$toast.error(this.$t("url_invalid_format"), {
           icon: "error",
@@ -1363,9 +1274,12 @@ export default {
       // Start showing the loading bar as soon as possible.
       // The nuxt axios module will hide it when the request is made.
       this.$nuxt.$loading.start()
-      this.previewEnabled = false
-      this.response.status = this.$t("fetching")
-      this.response.body = this.$t("loading")
+      this.response = {
+        duration: 0,
+        size: 0,
+        status: this.$t("fetching"),
+        body: this.$t("loading"),
+      }
       const auth =
         this.auth === "Basic Auth"
           ? {
@@ -1388,13 +1302,19 @@ export default {
         })
       }
       requestBody = requestBody ? requestBody.toString() : null
-      if (this.files.length !== 0) {
+      if (this.contentType === "multipart/form-data") {
         const formData = new FormData()
-        for (let i = 0; i < this.files.length; i++) {
-          let file = this.files[i]
-          formData.append(i, file)
+        for (const bodyParam of this.bodyParams.filter((item) =>
+          item.hasOwnProperty("active") ? item.active == true : true
+        )) {
+          if (bodyParam?.value?.[0] instanceof File) {
+            for (const file of bodyParam.value) {
+              formData.append(bodyParam.key, file)
+            }
+          } else {
+            formData.append(bodyParam.key, bodyParam.value)
+          }
         }
-        formData.append("data", requestBody)
         requestBody = formData
       }
       // If the request uses a token for auth, we want to make sure it's sent here.
@@ -1418,9 +1338,8 @@ export default {
         if (headers[id].key) headersObject[headers[id].key] = headers[id].value
       })
       headers = headersObject
+      const startTime = new Date().getTime()
       try {
-        const startTime = Date.now()
-
         this.runningRequest = true
         const payload = await this.makeRequest(
           auth,
@@ -1429,11 +1348,9 @@ export default {
           this.showPreRequestScript && this.preRequestScript
         )
         this.runningRequest = false
-
-        const duration = Date.now() - startTime
-        this.$toast.info(this.$t("finished_in", { duration }), {
-          icon: "done",
-        })
+        const duration = new Date().getTime() - startTime
+        this.response.duration = duration
+        this.response.size = payload.headers["content-length"]
         ;(() => {
           this.response.status = payload.status
           this.response.headers = payload.headers
@@ -1445,6 +1362,7 @@ export default {
             status: this.response.status,
             date: new Date().toLocaleDateString(),
             time: new Date().toLocaleTimeString(),
+            updatedOn: new Date(),
             method: this.method,
             url: this.url,
             path: this.path,
@@ -1475,21 +1393,21 @@ export default {
           }
 
           this.$refs.historyComponent.addEntry(entry)
-          if (fb.currentUser !== null && fb.currentSettings[2]) {
-            if (fb.currentSettings[2].value) {
-              fb.writeHistory(entry)
-            }
+          if (fb.currentUser !== null && this.SYNC_COLLECTIONS) {
+            fb.writeHistory(entry)
           }
         })()
       } catch (error) {
         this.runningRequest = false
-
         // If the error is caused by cancellation, do nothing
         if (error === "cancellation") {
           this.response.status = this.$t("cancelled")
           this.response.body = this.$t("cancelled")
         } else {
           console.log(error)
+          const duration = new Date().getTime() - startTime
+          this.response.duration = duration
+          this.response.size = Buffer.byteLength(JSON.stringify(error))
           if (error.response) {
             this.response.headers = error.response.headers
             this.response.status = error.response.status
@@ -1500,6 +1418,7 @@ export default {
               status: this.response.status,
               date: new Date().toLocaleDateString(),
               time: new Date().toLocaleTimeString(),
+              updatedOn: new Date(),
               method: this.method,
               url: this.url,
               path: this.path,
@@ -1532,10 +1451,8 @@ export default {
             }
 
             this.$refs.historyComponent.addEntry(entry)
-            if (fb.currentUser !== null && fb.currentSettings[2]) {
-              if (fb.currentSettings[2].value) {
-                fb.writeHistory(entry)
-              }
+            if (fb.currentUser !== null && this.SYNC_HISTORY) {
+              fb.writeHistory(entry)
             }
             return
           } else {
@@ -1544,7 +1461,7 @@ export default {
             this.$toast.error(`${error} ${this.$t("f12_details")}`, {
               icon: "error",
             })
-            if (!this.$store.state.postwoman.settings.PROXY_ENABLED) {
+            if (!this.PROXY_ENABLED) {
               this.$toast.info(this.$t("enable_proxy"), {
                 icon: "help",
                 duration: 8000,
@@ -1664,19 +1581,6 @@ export default {
         },
       })
     },
-    prettifyRequestBody() {
-      try {
-        const jsonObj = JSON.parse(this.rawParams)
-        this.rawParams = JSON.stringify(jsonObj, null, 2)
-        let oldIcon = this.$refs.prettifyRequest.innerHTML
-        this.$refs.prettifyRequest.innerHTML = this.doneButton
-        setTimeout(() => (this.$refs.prettifyRequest.innerHTML = oldIcon), 1000)
-      } catch (e) {
-        this.$toast.error(`${this.$t("json_prettify_invalid_body")}`, {
-          icon: "error",
-        })
-      }
-    },
     copyRequest() {
       if (navigator.share) {
         const time = new Date().toLocaleTimeString()
@@ -1684,7 +1588,7 @@ export default {
         navigator
           .share({
             title: "Hoppscotch",
-            text: `Hoppscotch • API request builder at ${time} on ${date}`,
+            text: `Hoppscotch • Open source API development ecosystem at ${time} on ${date}`,
             url: window.location.href,
           })
           .then(() => {})
@@ -1708,7 +1612,9 @@ export default {
       const deep = (key) => {
         const haveItems = [...this[key]].length
         if (haveItems && this[key]["value"] !== "") {
-          return `${key}=${JSON.stringify(this[key])}&`
+          // Exclude files fro  query params
+          const filesRemoved = this[key].filter((item) => !(item?.value?.[0] instanceof File))
+          return `${key}=${JSON.stringify(filesRemoved)}&`
         }
         return ""
       }
@@ -1716,10 +1622,10 @@ export default {
         "method",
         "url",
         "path",
-        !this.urlExcludes.auth ? "auth" : null,
-        !this.urlExcludes.httpUser ? "httpUser" : null,
-        !this.urlExcludes.httpPassword ? "httpPassword" : null,
-        !this.urlExcludes.bearerToken ? "bearerToken" : null,
+        !this.URL_EXCLUDES.auth ? "auth" : null,
+        !this.URL_EXCLUDES.httpUser ? "httpUser" : null,
+        !this.URL_EXCLUDES.httpPassword ? "httpPassword" : null,
+        !this.URL_EXCLUDES.bearerToken ? "bearerToken" : null,
         "contentType",
       ]
         .filter((item) => item !== null)
@@ -1729,7 +1635,9 @@ export default {
       history.replaceState(
         window.location.href,
         "",
-        `/?${encodeURI(flats.concat(deeps, bodyParams).join("").slice(0, -1))}`
+        `${this.$router.options.base}?${encodeURI(
+          flats.concat(deeps, bodyParams).join("").slice(0, -1)
+        )}`
       )
     },
     setRouteQueries(queries) {
@@ -1745,25 +1653,25 @@ export default {
         }
       }
     },
-    observeRequestButton() {
-      const requestElement = this.$refs.request.$el
-      const sendButtonElement = this.$refs.sendButton
-      const observer = new IntersectionObserver(
-        (entries, observer) => {
-          entries.forEach(({ isIntersecting }) => {
-            if (isIntersecting) sendButtonElement.classList.remove("show")
-            // The button should float when it is no longer visible on screen.
-            // This is done by adding the show class to the button.
-            else sendButtonElement.classList.add("show")
-          })
-        },
-        {
-          rootMargin: "0px",
-          threshold: [0],
-        }
-      )
-      observer.observe(requestElement)
-    },
+    // observeRequestButton() {
+    //   const requestElement = this.$refs.request
+    //   const sendButtonElement = this.$refs.sendButton
+    //   const observer = new IntersectionObserver(
+    //     (entries, observer) => {
+    //       entries.forEach(({ isIntersecting }) => {
+    //         if (isIntersecting) sendButtonElement.classList.remove("show")
+    //         // The button should float when it is no longer visible on screen.
+    //         // This is done by adding the show class to the button.
+    //         else sendButtonElement.classList.add("show")
+    //       })
+    //     },
+    //     {
+    //       rootMargin: "0px",
+    //       threshold: [0],
+    //     }
+    //   )
+    //   observer.observe(requestElement)
+    // },
     handleImport() {
       const { value: text } = document.getElementById("import-curl")
       try {
@@ -1876,8 +1784,8 @@ export default {
       }
       let urlAndPath = parseUrlAndPath(this.uri)
       this.editRequest = {
-        url: urlAndPath.url,
-        path: urlAndPath.path,
+        url: decodeURI(urlAndPath.url),
+        path: decodeURI(urlAndPath.path),
         method: this.method,
         auth: this.auth,
         httpUser: this.httpUser,
@@ -1905,50 +1813,23 @@ export default {
       this.editRequest = {}
     },
     setExclude(excludedField, excluded) {
+      const update = clone(this.URL_EXCLUDES)
+
       if (excludedField === "auth") {
-        this.urlExcludes.auth = excluded
-        this.urlExcludes.httpUser = excluded
-        this.urlExcludes.httpPassword = excluded
-        this.urlExcludes.bearerToken = excluded
+        update.auth = excluded
+        update.httpUser = excluded
+        update.httpPassword = excluded
+        update.bearerToken = excluded
       } else {
-        this.urlExcludes[excludedField] = excluded
+        update[excludedField] = excluded
       }
+
+      applySetting("URL_EXCLUDES", update)
+
       this.setRouteQueryState()
     },
-    uploadAttachment() {
-      this.filenames = ""
-      this.files = this.$refs.attachment.files
-      if (this.files.length !== 0) {
-        for (let file of this.files) {
-          this.filenames = `${this.filenames}<br/>${file.name}`
-        }
-        this.$toast.info(this.$t("file_imported"), {
-          icon: "attach_file",
-        })
-      } else {
-        this.$toast.error(this.$t("choose_file"), {
-          icon: "attach_file",
-        })
-      }
-    },
-    uploadPayload() {
-      this.rawInput = true
-      const file = this.$refs.payload.files[0]
-      if (file !== undefined && file !== null) {
-        const reader = new FileReader()
-        reader.onload = ({ target }) => {
-          this.rawParams = target.result
-        }
-        reader.readAsText(file)
-        this.$toast.info(this.$t("file_imported"), {
-          icon: "attach_file",
-        })
-      } else {
-        this.$toast.error(this.$t("choose_file"), {
-          icon: "attach_file",
-        })
-      }
-      this.$refs.payload.value = ""
+    updateRawBody(rawParams) {
+      this.rawParams = rawParams
     },
     async handleAccessTokenRequest() {
       if (this.oidcDiscoveryUrl === "" && (this.authUrl === "" || this.accessTokenUrl === "")) {
@@ -2055,7 +1936,7 @@ export default {
     },
   },
   async mounted() {
-    this.observeRequestButton()
+    // this.observeRequestButton()
     this._keyListener = function (e) {
       if (e.key === "g" && (e.ctrlKey || e.metaKey)) {
         e.preventDefault()
@@ -2106,13 +1987,6 @@ export default {
     await this.oauthRedirectReq()
   },
   created() {
-    this.urlExcludes = this.$store.state.postwoman.settings.URL_EXCLUDES || {
-      // Exclude authentication by default for security reasons.
-      auth: true,
-      httpUser: true,
-      httpPassword: true,
-      bearerToken: true,
-    }
     if (Object.keys(this.$route.query).length) this.setRouteQueries(this.$route.query)
     this.$watch(
       (vm) => [

@@ -1,4 +1,4 @@
-import Vue from "vue";
+import Vue from "vue"
 
 export default {
   setState({ request }, { attribute, value }) {
@@ -17,6 +17,14 @@ export default {
 
   addGQLHeader({ gql }, object) {
     gql.headers.push(object)
+  },
+
+  setActiveGQLHeader({ gql }, { index, value }) {
+    if (!gql.headers[index].hasOwnProperty("active")) {
+      Vue.set(gql.headers[index], "active", value)
+    } else {
+      gql.headers[index].active = value
+    }
   },
 
   removeGQLHeader({ gql }, index) {
@@ -68,7 +76,7 @@ export default {
   },
 
   setValueParams({ request }, { index, value }) {
-    request.params[index].value = encodeURI(value)
+    request.params[index].value = value
   },
 
   setTypeParams({ request }, { index, value }) {
@@ -97,6 +105,18 @@ export default {
 
   setValueBodyParams({ request }, { index, value }) {
     request.bodyParams[index].value = value
+  },
+
+  // While this mutation is same as the setValueBodyParams above, it is excluded
+  // from vuex-persist. We will commit this mutation while adding a file
+  // param as there is no way to serialize File objects and thus we cannot
+  // persist file objects in localStorage
+  setFilesBodyParams({ request }, { index, value }) {
+    request.bodyParams[index].value = value
+  },
+
+  removeFile({ request }, { index, fileIndex }) {
+    request.bodyParams[index].value.splice(fileIndex, 1)
   },
 
   setActiveBodyParams({ request }, { index, value }) {

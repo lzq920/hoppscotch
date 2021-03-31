@@ -2,7 +2,7 @@
   <div class="page">
     <div class="content">
       <div class="page-columns inner-left">
-        <pw-section class="blue" :label="$t('endpoint')" ref="endpoint" no-legend>
+        <AppSection :label="$t('endpoint')" ref="endpoint" no-legend>
           <ul>
             <li>
               <label for="url">{{ $t("url") }}</label>
@@ -35,9 +35,9 @@
               </li>
             </div>
           </ul>
-        </pw-section>
+        </AppSection>
 
-        <pw-section class="orange" :label="$t('headers')" ref="headers" no-legend>
+        <AppSection :label="$t('headers')" ref="headers" no-legend>
           <div class="flex flex-col">
             <label>{{ $t("headers") }}</label>
             <ul v-if="headers.length !== 0">
@@ -59,7 +59,7 @@
               :class="{ 'border-t': index == 0 }"
             >
               <li>
-                <autocomplete
+                <SmartAutoComplete
                   :placeholder="$t('header_count', { count: index + 1 })"
                   :source="commonHeaders"
                   :spellcheck="false"
@@ -91,6 +91,36 @@
                 <li>
                   <button
                     class="icon"
+                    @click="
+                      $store.commit('setActiveGQLHeader', {
+                        index,
+                        value: header.hasOwnProperty('active') ? !header.active : false,
+                      })
+                    "
+                    v-tooltip.bottom="{
+                      content: header.hasOwnProperty('active')
+                        ? header.active
+                          ? $t('turn_off')
+                          : $t('turn_on')
+                        : $t('turn_off'),
+                    }"
+                  >
+                    <i class="material-icons">
+                      {{
+                        header.hasOwnProperty("active")
+                          ? header.active
+                            ? "check_box"
+                            : "check_box_outline_blank"
+                          : "check_box"
+                      }}
+                    </i>
+                  </button>
+                </li>
+              </div>
+              <div>
+                <li>
+                  <button
+                    class="icon"
                     @click="removeRequestHeader(index)"
                     v-tooltip.bottom="$t('delete')"
                   >
@@ -108,9 +138,9 @@
               </li>
             </ul>
           </div>
-        </pw-section>
+        </AppSection>
 
-        <pw-section class="green" :label="$t('schema')" ref="schema" no-legend>
+        <AppSection :label="$t('schema')" ref="schema" no-legend>
           <div class="row-wrapper">
             <label>{{ $t("schema") }}</label>
             <div v-if="schema">
@@ -144,7 +174,7 @@
               </button>
             </div>
           </div>
-          <ace-editor
+          <SmartAceEditor
             v-if="schema"
             :value="schema"
             :lang="'graphqlschema'"
@@ -168,9 +198,9 @@
             readonly
             type="text"
           />
-        </pw-section>
+        </AppSection>
 
-        <pw-section class="teal" :label="$t('query')" ref="query" no-legend>
+        <AppSection :label="$t('query')" ref="query" no-legend>
           <div class="row-wrapper gqlRunQuery">
             <label for="gqlQuery">{{ $t("query") }}</label>
             <div>
@@ -195,9 +225,17 @@
               >
                 <i class="material-icons">photo_filter</i>
               </button>
+              <button
+                class="icon"
+                @click="saveRequest"
+                ref="saveRequest"
+                v-tooltip.bottom="$t('save_to_collections')"
+              >
+                <i class="material-icons">create_new_folder</i>
+              </button>
             </div>
           </div>
-          <queryeditor
+          <GraphqlQueryEditor
             ref="queryEditor"
             v-model="gqlQueryString"
             :onRunGQLQuery="runQuery"
@@ -211,12 +249,12 @@
             }"
             styles="rounded-b-lg"
           />
-        </pw-section>
+        </AppSection>
 
-        <pw-section class="yellow" :label="$t('variables')" ref="variables" no-legend>
+        <AppSection :label="$t('variables')" ref="variables" no-legend>
           <div class="flex flex-col">
             <label>{{ $t("variables") }}</label>
-            <ace-editor
+            <SmartAceEditor
               v-model="variableString"
               :lang="'json'"
               :options="{
@@ -230,13 +268,13 @@
               styles="rounded-b-lg"
             />
           </div>
-        </pw-section>
+        </AppSection>
 
-        <pw-section class="purple" :label="$t('response')" ref="response" no-legend>
+        <AppSection :label="$t('response')" ref="response" no-legend>
           <div class="flex flex-col">
             <label>{{ $t("response") }}</label>
             <div class="row-wrapper">
-              <label for="responseField">{{ $t("response") }}</label>
+              <label for="responseField">{{ $t("response_body") }}</label>
               <div>
                 <button
                   class="icon"
@@ -258,7 +296,7 @@
                 </button>
               </div>
             </div>
-            <ace-editor
+            <SmartAceEditor
               v-if="response"
               :value="response"
               :lang="'json'"
@@ -284,86 +322,120 @@
               type="text"
             />
           </div>
-        </pw-section>
+        </AppSection>
       </div>
 
       <aside class="sticky-inner inner-right lg:max-w-md">
-        <pw-section class="purple" :label="$t('docs')" ref="docs" no-legend>
-          <section class="flex-col">
-            <input
-              type="text"
-              :placeholder="$t('search')"
-              v-model="graphqlFieldsFilterText"
-              class="rounded-t-lg"
+        <SmartTabs>
+          <SmartTab :id="'docs'" :label="`Docs`" :selected="true">
+            <AppSection :label="$t('docs')" ref="docs" no-legend>
+              <section class="flex-col">
+                <input
+                  type="text"
+                  :placeholder="$t('search')"
+                  v-model="graphqlFieldsFilterText"
+                  class="rounded-t-lg"
+                />
+                <SmartTabs ref="gqlTabs" styles="m-4">
+                  <div class="gqlTabs">
+                    <SmartTab
+                      v-if="queryFields.length > 0"
+                      :id="'queries'"
+                      :label="$t('queries')"
+                      :selected="true"
+                    >
+                      <div v-for="field in filteredQueryFields" :key="field.name">
+                        <GraphqlField :gqlField="field" :jumpTypeCallback="handleJumpToType" />
+                      </div>
+                    </SmartTab>
+
+                    <SmartTab
+                      v-if="mutationFields.length > 0"
+                      :id="'mutations'"
+                      :label="$t('mutations')"
+                    >
+                      <div v-for="field in filteredMutationFields" :key="field.name">
+                        <GraphqlField :gqlField="field" :jumpTypeCallback="handleJumpToType" />
+                      </div>
+                    </SmartTab>
+
+                    <SmartTab
+                      v-if="subscriptionFields.length > 0"
+                      :id="'subscriptions'"
+                      :label="$t('subscriptions')"
+                    >
+                      <div v-for="field in filteredSubscriptionFields" :key="field.name">
+                        <GraphqlField :gqlField="field" :jumpTypeCallback="handleJumpToType" />
+                      </div>
+                    </SmartTab>
+
+                    <SmartTab
+                      v-if="graphqlTypes.length > 0"
+                      :id="'types'"
+                      :label="$t('types')"
+                      ref="typesTab"
+                    >
+                      <div v-for="type in filteredGraphqlTypes" :key="type.name">
+                        <GraphqlType
+                          :gqlType="type"
+                          :gqlTypes="graphqlTypes"
+                          :isHighlighted="isGqlTypeHighlighted({ gqlType: type })"
+                          :highlightedFields="getGqlTypeHighlightedFields({ gqlType: type })"
+                          :jumpTypeCallback="handleJumpToType"
+                        />
+                      </div>
+                    </SmartTab>
+                  </div>
+                </SmartTabs>
+              </section>
+              <p
+                v-if="
+                  queryFields.length === 0 &&
+                  mutationFields.length === 0 &&
+                  subscriptionFields.length === 0 &&
+                  graphqlTypes.length === 0
+                "
+                class="info"
+              >
+                {{ $t("send_request_first") }}
+              </p>
+            </AppSection>
+          </SmartTab>
+
+          <SmartTab :id="'history'" :label="$t('history')">
+            <History
+              @useHistory="handleUseHistory"
+              ref="graphqlHistoryComponent"
+              :page="'graphql'"
             />
-            <tabs ref="gqlTabs" styles="m-4">
-              <div class="gqlTabs">
-                <tab
-                  v-if="queryFields.length > 0"
-                  :id="'queries'"
-                  :label="$t('queries')"
-                  :selected="true"
-                >
-                  <div v-for="field in filteredQueryFields" :key="field.name">
-                    <field :gqlField="field" :jumpTypeCallback="handleJumpToType" />
-                  </div>
-                </tab>
+          </SmartTab>
 
-                <tab v-if="mutationFields.length > 0" :id="'mutations'" :label="$t('mutations')">
-                  <div v-for="field in filteredMutationFields" :key="field.name">
-                    <field :gqlField="field" :jumpTypeCallback="handleJumpToType" />
-                  </div>
-                </tab>
+          <SmartTab :id="'collections'" :label="$t('collections')">
+            <CollectionsGraphql />
+          </SmartTab>
 
-                <tab
-                  v-if="subscriptionFields.length > 0"
-                  :id="'subscriptions'"
-                  :label="$t('subscriptions')"
-                >
-                  <div v-for="field in filteredSubscriptionFields" :key="field.name">
-                    <field :gqlField="field" :jumpTypeCallback="handleJumpToType" />
-                  </div>
-                </tab>
+          <!-- <SmartTab :id="'env'" :label="$t('environments')">
+                <Environments @use-environment="useSelectedEnvironment($event)" />
+              </SmartTab>
 
-                <tab
-                  v-if="graphqlTypes.length > 0"
-                  :id="'types'"
-                  :label="$t('types')"
-                  ref="typesTab"
-                >
-                  <div v-for="type in filteredGraphqlTypes" :key="type.name">
-                    <type
-                      :gqlType="type"
-                      :isHighlighted="isGqlTypeHighlighted({ gqlType: type })"
-                      :highlightedFields="getGqlTypeHighlightedFields({ gqlType: type })"
-                      :jumpTypeCallback="handleJumpToType"
-                    />
-                  </div>
-                </tab>
-              </div>
-            </tabs>
-          </section>
-
-          <p
-            v-if="
-              queryFields.length === 0 &&
-              mutationFields.length === 0 &&
-              subscriptionFields.length === 0 &&
-              graphqlTypes.length === 0
-            "
-            class="info"
-          >
-            {{ $t("send_request_first") }}
-          </p>
-        </pw-section>
+              <SmartTab :id="'notes'" :label="$t('notes')">
+                <HttpNotes />
+              </SmartTab> -->
+        </SmartTabs>
       </aside>
     </div>
+    <CollectionsGraphqlSaveRequest
+      :show="showSaveRequestModal"
+      @hide-modal="hideRequestModal"
+      :editing-request="editRequest"
+    />
   </div>
 </template>
 
 <style scoped lang="scss">
 .gqlTabs {
   max-height: calc(100vh - 192px);
+  position: relative;
   @apply overflow-auto;
 }
 .gqlRunQuery {
@@ -376,6 +448,8 @@ import * as gql from "graphql"
 import { commonHeaders } from "~/helpers/headers"
 import { getPlatformSpecialKey } from "~/helpers/platformutils"
 import { sendNetworkRequest } from "~/helpers/network"
+import { getSettingSubject } from "~/newstore/settings"
+import { fb } from "~/helpers/fb"
 
 export default {
   data() {
@@ -393,16 +467,32 @@ export default {
       graphqlFieldsFilterText: undefined,
       isPollingSchema: false,
       timeoutSubscription: null,
-
-      settings: {
-        SCROLL_INTO_ENABLED:
-          typeof this.$store.state.postwoman.settings.SCROLL_INTO_ENABLED !== "undefined"
-            ? this.$store.state.postwoman.settings.SCROLL_INTO_ENABLED
-            : true,
-      },
+      activeSidebar: true,
+      editRequest: {},
+      showSaveRequestModal: false,
     }
   },
+  subscriptions() {
+    return {
+      SCROLL_INTO_ENABLED: getSettingSubject("SCROLL_INTO_ENABLED"),
+    }
+  },
+  watch: {
+    selectedRequest(newValue) {
+      if (!newValue) return
+      this.url = newValue.url
+      this.gqlQueryString = newValue.query
+      this.headers = newValue.headers
+      this.variableString = newValue.variables
+    },
+  },
   computed: {
+    selectedRequest() {
+      return this.$store.state.postwoman.selectedGraphqlRequest
+    },
+    editingRequest() {
+      return this.$store.state.postwoman.editingRequest
+    },
     filteredQueryFields() {
       return this.getFilteredGraphqlFields({
         filterText: this.graphqlFieldsFilterText,
@@ -492,6 +582,30 @@ export default {
     next()
   },
   methods: {
+    hideRequestModal() {
+      this.showSaveRequestModal = false
+      this.editRequest = {}
+    },
+    saveRequest() {
+      this.editRequest = {
+        url: this.url,
+        query: this.gqlQueryString,
+        headers: this.headers,
+        variables: this.variableString,
+      }
+      this.showSaveRequestModal = true
+    },
+    useSelectedEnvironment(event) {
+      console.log("use selected environment")
+    },
+    handleUseHistory(entry) {
+      this.url = entry.url
+      this.headers = entry.headers
+      this.gqlQueryString = entry.query
+      this.response = entry.responseText
+      this.variableString = entry.variables
+      this.schema = ""
+    },
     isGqlTypeHighlighted({ gqlType }) {
       if (!this.graphqlFieldsFilterText) return false
 
@@ -559,16 +673,17 @@ export default {
     doPrettifyQuery() {
       this.$refs.queryEditor.prettifyQuery()
     },
-    handleJumpToType(type) {
+    async handleJumpToType(type) {
       this.$refs.gqlTabs.selectTab(this.$refs.typesTab)
+      await this.$nextTick()
 
       const rootTypeName = this.resolveRootType(type).name
 
       const target = document.getElementById(`type_${rootTypeName}`)
-      if (target && this.settings.SCROLL_INTO_ENABLED) {
-        target.scrollIntoView({
-          behavior: "smooth",
-        })
+      if (target && this.SCROLL_INTO_ENABLED) {
+        this.$refs.gqlTabs.$el
+          .querySelector(".gqlTabs")
+          .scrollTo({ top: target.offsetTop, behavior: "smooth" })
       }
     },
     resolveRootType(type) {
@@ -623,13 +738,15 @@ export default {
       this.$nuxt.$loading.start()
 
       this.response = this.$t("loading")
-      if (this.settings.SCROLL_INTO_ENABLED) this.scrollInto("response")
+      if (this.SCROLL_INTO_ENABLED) this.scrollInto("response")
 
       try {
         let headers = {}
-        this.headers.forEach(({ key, value }) => {
-          headers[key] = value
-        })
+        this.headers
+          .filter((item) => (item.hasOwnProperty("active") ? item.active == true : true))
+          .forEach(({ key, value }) => {
+            headers[key] = value
+          })
 
         let variables = JSON.parse(this.variableString || "{}")
 
@@ -644,8 +761,14 @@ export default {
           },
           data: JSON.stringify({ query: gqlQueryString, variables }),
         }
-
-        const res = await sendNetworkRequest(reqOptions, this.$store)
+        let entry = {
+          url: this.url,
+          query: gqlQueryString,
+          variables: this.variableString,
+          star: false,
+          headers: this.headers,
+        }
+        const res = await sendNetworkRequest(reqOptions)
 
         // HACK: Temporary trailing null character issue from the extension fix
         const responseText = new TextDecoder("utf-8").decode(res.data).replace(/\0+$/, "")
@@ -657,6 +780,22 @@ export default {
         this.$toast.info(this.$t("finished_in", { duration }), {
           icon: "done",
         })
+
+        entry = {
+          ...entry,
+          response: this.response,
+          date: new Date().toLocaleDateString(),
+          time: new Date().toLocaleTimeString(),
+          updatedOn: new Date(),
+          duration,
+        }
+
+        this.$refs.graphqlHistoryComponent.addEntry(entry)
+        if (fb.currentUser !== null && fb.currentSettings[2]) {
+          if (fb.currentSettings[2].value) {
+            fb.writeGraphqlHistory(entry)
+          }
+        }
       } catch (error) {
         this.response = `${error}. ${this.$t("check_console_details")}`
         this.$nuxt.$loading.finish()
@@ -706,13 +845,17 @@ export default {
         ? schema.getSubscriptionType().name
         : ""
 
-      for (const type in typeMap) {
+      for (const typeName in typeMap) {
+        let type = typeMap[typeName]
         if (
-          !typeMap[type].name.startsWith("__") &&
-          ![queryTypeName, mutationTypeName, subscriptionTypeName].includes(typeMap[type].name) &&
-          typeMap[type] instanceof gql.GraphQLObjectType
+          !type.name.startsWith("__") &&
+          ![queryTypeName, mutationTypeName, subscriptionTypeName].includes(type.name) &&
+          (type instanceof gql.GraphQLObjectType ||
+            type instanceof gql.GraphQLInputObjectType ||
+            type instanceof gql.GraphQLEnumType ||
+            type instanceof gql.GraphQLInterfaceType)
         ) {
-          types.push(typeMap[type])
+          types.push(type)
         }
       }
       this.graphqlTypes = types
@@ -738,9 +881,11 @@ export default {
         })
 
         let headers = {}
-        this.headers.forEach(({ key, value }) => {
-          headers[key] = value
-        })
+        this.headers
+          .filter((item) => (item.hasOwnProperty("active") ? item.active == true : true))
+          .forEach(({ key, value }) => {
+            headers[key] = value
+          })
 
         const reqOptions = {
           method: "post",
@@ -773,6 +918,8 @@ export default {
 
         this.$refs.queryEditor.setValidationSchema(schema)
         this.$nuxt.$loading.finish()
+
+        if (this.isPollingSchema) this.timeoutSubscription = setTimeout(this.pollSchema, 7000)
       } catch (error) {
         this.$nuxt.$loading.finish()
 
@@ -784,11 +931,11 @@ export default {
           }
         )
         console.log("Error", error)
+
+        this.isPollingSchema = false
       }
 
       this.$nuxt.$loading.finish()
-
-      if (this.isPollingSchema) this.timeoutSubscription = setTimeout(this.pollSchema, 7000)
     },
     async getSchema() {
       const startTime = Date.now()
@@ -798,7 +945,7 @@ export default {
       this.$nuxt.$loading.start()
 
       this.schema = this.$t("loading")
-      if (this.settings.SCROLL_INTO_ENABLED) this.scrollInto("schema")
+      if (this.SCROLL_INTO_ENABLED) this.scrollInto("schema")
 
       try {
         const query = JSON.stringify({
@@ -806,9 +953,11 @@ export default {
         })
 
         let headers = {}
-        this.headers.forEach(({ key, value }) => {
-          headers[key] = value
-        })
+        this.headers
+          .filter((item) => (item.hasOwnProperty("active") ? item.active == true : true))
+          .forEach(({ key, value }) => {
+            headers[key] = value
+          })
 
         const reqOptions = {
           method: "post",

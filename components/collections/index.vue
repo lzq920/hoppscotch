@@ -1,5 +1,5 @@
 <template>
-  <pw-section class="yellow" :label="$t('collections')" ref="collections" no-legend>
+  <AppSection :label="$t('collections')" ref="collections" no-legend>
     <div class="show-on-large-screen">
       <input
         aria-label="Search"
@@ -9,28 +9,28 @@
         class="rounded-t-lg"
       />
     </div>
-    <add-collection :show="showModalAdd" @hide-modal="displayModalAdd(false)" />
-    <edit-collection
+    <CollectionsAdd :show="showModalAdd" @hide-modal="displayModalAdd(false)" />
+    <CollectionsEdit
       :show="showModalEdit"
       :editing-collection="editingCollection"
       :editing-collection-index="editingCollectionIndex"
       @hide-modal="displayModalEdit(false)"
     />
-    <add-folder
+    <CollectionsAddFolder
       :show="showModalAddFolder"
       :folder="editingFolder"
       :folder-path="editingFolderPath"
       @add-folder="onAddFolder($event)"
       @hide-modal="displayModalAddFolder(false)"
     />
-    <edit-folder
+    <CollectionsEditFolder
       :show="showModalEditFolder"
       :collection-index="editingCollectionIndex"
       :folder="editingFolder"
       :folder-index="editingFolderIndex"
       @hide-modal="displayModalEditFolder(false)"
     />
-    <edit-request
+    <CollectionsEditRequest
       :show="showModalEditRequest"
       :collection-index="editingCollectionIndex"
       :folder-index="editingFolderIndex"
@@ -39,7 +39,7 @@
       :request-index="editingRequestIndex"
       @hide-modal="displayModalEditRequest(false)"
     />
-    <import-export-collections
+    <CollectionsImportExport
       :show="showModalImportExport"
       @hide-modal="displayModalImportExport(false)"
     />
@@ -58,7 +58,7 @@
     <div class="virtual-list">
       <ul class="flex-col">
         <li v-for="(collection, index) in filteredCollections" :key="collection.name">
-          <collection
+          <CollectionsCollection
             :name="collection.name"
             :collection-index="index"
             :collection="collection"
@@ -76,17 +76,18 @@
     <p v-if="filterText && filteredCollections.length === 0" class="info">
       <i class="material-icons">not_interested</i> {{ $t("nothing_found") }} "{{ filterText }}"
     </p>
-  </pw-section>
+  </AppSection>
 </template>
 
 <style scoped lang="scss">
 .virtual-list {
-  max-height: calc(100vh - 232px);
+  max-height: calc(100vh - 270px);
 }
 </style>
 
 <script>
 import { fb } from "~/helpers/fb"
+import { getSettingSubject } from "~/newstore/settings"
 
 export default {
   props: {
@@ -109,6 +110,11 @@ export default {
       editingRequest: undefined,
       editingRequestIndex: undefined,
       filterText: "",
+    }
+  },
+  subscriptions() {
+    return {
+      SYNC_COLLECTIONS: getSettingSubject("syncCollections"),
     }
   },
   computed: {
@@ -199,9 +205,11 @@ export default {
       this.syncCollections()
     },
     onAddFolder({ name, path }) {
+      const flag = "rest"
       this.$store.commit("postwoman/addFolder", {
         name,
         path,
+        flag,
       })
 
       this.displayModalAddFolder(false)
@@ -240,10 +248,11 @@ export default {
       this.$data.editingRequestIndex = undefined
     },
     syncCollections() {
-      if (fb.currentUser !== null && fb.currentSettings[0]) {
-        if (fb.currentSettings[0].value) {
-          fb.writeCollections(JSON.parse(JSON.stringify(this.$store.state.postwoman.collections)))
-        }
+      if (fb.currentUser !== null && this.SYNC_COLLECTIONS) {
+        fb.writeCollections(
+          JSON.parse(JSON.stringify(this.$store.state.postwoman.collections)),
+          "collections"
+        )
       }
     },
   },
