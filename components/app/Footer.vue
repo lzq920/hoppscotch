@@ -5,7 +5,6 @@
         <a class="footer-link" href="https://www.netlify.com" target="_blank" rel="noopener">
           Powered by Netlify
         </a>
-        <span class="footer-link"> Sponsored by </span>
         <span>
           <a
             class="footer-link"
@@ -15,9 +14,6 @@
           >
             OSS Capital
           </a>
-        </span>
-        <span class="footer-link"> & </span>
-        <span>
           <a
             class="footer-link"
             href="https://paw.cloud/?utm_source=hoppscotch&utm_medium=website&utm_campaign=hoppscotch-sponsorship"
@@ -25,6 +21,14 @@
             rel="noopener"
           >
             Paw
+          </a>
+          <a
+            class="footer-link"
+            href="https://simplescraper.io/?utm_source=hs"
+            target="_blank"
+            rel="noopener"
+          >
+            Simplescraper
           </a>
         </span>
         <iframe
@@ -39,7 +43,7 @@
         ></iframe>
       </span>
       <span class="flex flex-col font-mono md:flex-row" style="align-items: start">
-        <a href="mailto:liyascthomas@gmail.com" target="_blank" rel="noopener">
+        <a href="mailto:support@hoppscotch.io" target="_blank" rel="noopener">
           <button class="icon" v-tooltip="$t('contact_us')">
             <i class="material-icons">email</i>
           </button>
@@ -70,6 +74,7 @@
   @apply my-2;
   @apply mx-4;
   @apply text-fgLightColor;
+  @apply text-sm;
 
   &:hover {
     @apply text-fgColor;

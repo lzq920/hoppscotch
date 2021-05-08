@@ -76,204 +76,8 @@
               </div>
             </div>
             <div>
-              <span class="collection" v-for="(collection, index) in this.items" :key="index">
-                <h2>
-                  <i class="material-icons">folder</i>
-                  {{ collection.name || $t("none") }}
-                </h2>
-                <span class="folder" v-for="(folder, index) in collection.folders" :key="index">
-                  <h3>
-                    <i class="material-icons">folder_open</i>
-                    {{ folder.name || $t("none") }}
-                  </h3>
-                  <span class="request" v-for="(request, index) in folder.requests" :key="index">
-                    <h4>
-                      <i class="material-icons">insert_drive_file</i>
-                      {{ request.name || $t("none") }}
-                    </h4>
-                    <p class="doc-desc" v-if="request.url">
-                      <span>
-                        {{ $t("url") }}: <code>{{ request.url || $t("none") }}</code>
-                      </span>
-                    </p>
-                    <p class="doc-desc" v-if="request.path">
-                      <span>
-                        {{ $t("path") }}:
-                        <code>{{ request.path || $t("none") }}</code>
-                      </span>
-                    </p>
-                    <p class="doc-desc" v-if="request.method">
-                      <span>
-                        {{ $t("method") }}:
-                        <code>{{ request.method || $t("none") }}</code>
-                      </span>
-                    </p>
-                    <p class="doc-desc" v-if="request.auth">
-                      <span>
-                        {{ $t("authentication") }}:
-                        <code>{{ request.auth || $t("none") }}</code>
-                      </span>
-                    </p>
-                    <p class="doc-desc" v-if="request.httpUser">
-                      <span>
-                        {{ $t("username") }}:
-                        <code>{{ request.httpUser || $t("none") }}</code>
-                      </span>
-                    </p>
-                    <p class="doc-desc" v-if="request.httpPassword">
-                      <span>
-                        {{ $t("password") }}:
-                        <code>{{ request.httpPassword || $t("none") }}</code>
-                      </span>
-                    </p>
-                    <p class="doc-desc" v-if="request.bearerToken">
-                      <span>
-                        {{ $t("token") }}:
-                        <code>{{ request.bearerToken || $t("none") }}</code>
-                      </span>
-                    </p>
-                    <h4 v-if="request.headers.length > 0">{{ $t("headers") }}</h4>
-                    <span v-if="request.headers">
-                      <p v-for="header in request.headers" :key="header.key" class="doc-desc">
-                        <span>
-                          {{ header.key || $t("none") }}:
-                          <code>{{ header.value || $t("none") }}</code>
-                        </span>
-                      </p>
-                    </span>
-                    <h4 v-if="request.params.length > 0">{{ $t("parameters") }}</h4>
-                    <span v-if="request.params">
-                      <p v-for="parameter in request.params" :key="parameter.key" class="doc-desc">
-                        <span>
-                          {{ parameter.key || $t("none") }}:
-                          <code>{{ parameter.value || $t("none") }}</code>
-                        </span>
-                      </p>
-                    </span>
-                    <h4 v-if="request.bodyParams">{{ $t("payload") }}</h4>
-                    <span v-if="request.bodyParams">
-                      <p v-for="payload in request.bodyParams" :key="payload.key" class="doc-desc">
-                        <span>
-                          {{ payload.key || $t("none") }}:
-                          <code>{{ payload.value || $t("none") }}</code>
-                        </span>
-                      </p>
-                    </span>
-                    <p class="doc-desc" v-if="request.rawParams">
-                      <span>
-                        {{ $t("parameters") }}:
-                        <code>{{ request.rawParams || $t("none") }}</code>
-                      </span>
-                    </p>
-                    <p class="doc-desc" v-if="request.contentType">
-                      <span>
-                        {{ $t("content_type") }}:
-                        <code>{{ request.contentType || $t("none") }}</code>
-                      </span>
-                    </p>
-                    <p class="doc-desc" v-if="request.requestType">
-                      <span>
-                        {{ $t("request_type") }}:
-                        <code>{{ request.requestType || $t("none") }}</code>
-                      </span>
-                    </p>
-                  </span>
-                </span>
-                <span
-                  class="request"
-                  v-for="(request, index) in collection.requests"
-                  :key="`request-${index}`"
-                >
-                  <h4>
-                    <i class="material-icons">insert_drive_file</i>
-                    {{ request.name || $t("none") }}
-                  </h4>
-                  <p class="doc-desc" v-if="request.url">
-                    <span>
-                      {{ $t("url") }}: <code>{{ request.url || $t("none") }}</code>
-                    </span>
-                  </p>
-                  <p class="doc-desc" v-if="request.path">
-                    <span>
-                      {{ $t("path") }}: <code>{{ request.path || $t("none") }}</code>
-                    </span>
-                  </p>
-                  <p class="doc-desc" v-if="request.method">
-                    <span>
-                      {{ $t("method") }}:
-                      <code>{{ request.method || $t("none") }}</code>
-                    </span>
-                  </p>
-                  <p class="doc-desc" v-if="request.auth">
-                    <span>
-                      {{ $t("authentication") }}:
-                      <code>{{ request.auth || $t("none") }}</code>
-                    </span>
-                  </p>
-                  <p class="doc-desc" v-if="request.httpUser">
-                    <span>
-                      {{ $t("username") }}:
-                      <code>{{ request.httpUser || $t("none") }}</code>
-                    </span>
-                  </p>
-                  <p class="doc-desc" v-if="request.httpPassword">
-                    <span>
-                      {{ $t("password") }}:
-                      <code>{{ request.httpPassword || $t("none") }}</code>
-                    </span>
-                  </p>
-                  <p class="doc-desc" v-if="request.bearerToken">
-                    <span>
-                      {{ $t("token") }}:
-                      <code>{{ request.bearerToken || $t("none") }}</code>
-                    </span>
-                  </p>
-                  <h4 v-if="request.headers.length > 0">{{ $t("headers") }}</h4>
-                  <span v-if="request.headers">
-                    <p v-for="header in request.headers" :key="header.key" class="doc-desc">
-                      <span>
-                        {{ header.key || $t("none") }}:
-                        <code>{{ header.value || $t("none") }}</code>
-                      </span>
-                    </p>
-                  </span>
-                  <h4 v-if="request.params.length > 0">{{ $t("parameters") }}</h4>
-                  <span v-if="request.params">
-                    <p v-for="parameter in request.params" :key="parameter.key" class="doc-desc">
-                      <span>
-                        {{ parameter.key || $t("none") }}:
-                        <code>{{ parameter.value || $t("none") }}</code>
-                      </span>
-                    </p>
-                  </span>
-                  <h4 v-if="request.bodyParams">{{ $t("payload") }}</h4>
-                  <span v-if="request.bodyParams">
-                    <p v-for="payload in request.bodyParams" :key="payload.key" class="doc-desc">
-                      <span>
-                        {{ payload.key || $t("none") }}:
-                        <code>{{ payload.value || $t("none") }}</code>
-                      </span>
-                    </p>
-                  </span>
-                  <p class="doc-desc" v-if="request.rawParams">
-                    <span>
-                      {{ $t("parameters") }}:
-                      <code>{{ request.rawParams || $t("none") }}</code>
-                    </span>
-                  </p>
-                  <p class="doc-desc" v-if="request.contentType">
-                    <span>
-                      {{ $t("content_type") }}:
-                      <code>{{ request.contentType || $t("none") }}</code>
-                    </span>
-                  </p>
-                  <p class="doc-desc" v-if="request.requestType">
-                    <span>
-                      {{ $t("request_type") }}:
-                      <code>{{ request.requestType || $t("none") }}</code>
-                    </span>
-                  </p>
-                </span>
+              <span v-for="(collection, index) in this.items" :key="index">
+                <DocsCollection :collection="collection" />
               </span>
             </div>
           </div>
@@ -281,62 +85,23 @@
       </div>
 
       <aside class="sticky-inner inner-right lg:max-w-md">
-        <Collections @use-collection="useSelectedCollection($event)" :doc="true" />
+        <Collections
+          :selected="selected"
+          @use-collection="useSelectedCollection($event)"
+          @remove-collection="removeSelectedCollection($event)"
+          :doc="true"
+        />
       </aside>
     </div>
   </div>
 </template>
 
-<style scoped lang="scss">
-.collection,
-.doc-desc,
-.folder,
-.request {
-  @apply flex;
-  @apply flex-col;
-  @apply justify-center;
-  @apply flex-1;
-  @apply p-4;
-
-  .material-icons {
-    @apply mr-4;
-  }
-}
-
-.folder {
-  @apply border-l;
-  @apply border-brdColor;
-  @apply mt-4;
-}
-
-.request {
-  @apply border;
-  @apply border-brdColor;
-  @apply rounded-lg;
-  @apply mt-4;
-
-  h4 {
-    @apply mt-4;
-  }
-}
-
-.doc-desc {
-  @apply text-fgLightColor;
-  @apply border-b;
-  @apply border-dashed;
-  @apply border-brdColor;
-  @apply m-0;
-
-  &:last-child {
-    @apply border-b-0;
-  }
-}
-</style>
-
 <script>
 import { fb } from "~/helpers/fb"
 import Mustache from "mustache"
 import DocsTemplate from "~/assets/md/docs.md"
+import folderContents from "~/assets/md/folderContents.md"
+import folderBody from "~/assets/md/folderBody.md"
 
 export default {
   data() {
@@ -345,6 +110,7 @@ export default {
       collectionJSON: "[]",
       items: [],
       docsMarkdown: "",
+      selected: [],
     }
   },
   methods: {
@@ -399,32 +165,64 @@ export default {
       this.$refs.collectionUpload.value = ""
     },
 
+    assignIDs(items, pref, nesting_level) {
+      for (var i = 0; i < items.length; ++i) {
+        items[i].id = `&emsp;${pref}${i + 1}.`
+        items[i].ref = `${items[i].name.split(" ").join("-")}`
+        items[i].nesting_level = nesting_level
+        items[i].folders = this.assignIDs(items[i].folders, items[i].id, nesting_level + "#")
+        for (var j = 0; j < items[i].requests.length; ++j) {
+          items[i].requests[j].id = `&emsp;${items[i].id}${i + 1}`
+          items[i].requests[j].ref = `${items[i].requests[j].name.split(" ").join("-")}`
+          items[i].requests[j].nesting_level = nesting_level + "#"
+        }
+      }
+      return items
+    },
+
     getDoc() {
       try {
         this.items = JSON.parse(this.collectionJSON)
+        this.assignIDs(this.items, "", "#")
         this.$toast.clear()
         this.$toast.info(this.$t("docs_generated"), {
           icon: "book",
         })
-        const docsMarkdown = Mustache.render(DocsTemplate, {
-          collections: this.items,
-          isHeaders() {
-            return this.headers.length
+        const docsMarkdown = Mustache.render(
+          DocsTemplate,
+          {
+            collections: this.items,
+            isHeaders() {
+              return this.headers.length
+            },
+            isParams() {
+              return this.params.length
+            },
+            isAuth() {
+              return this.auth !== "None"
+            },
+            isAuthBasic() {
+              return this.httpUser && this.httpPassword
+            },
+            isRawParams() {
+              return this.rawParams && this.rawParams !== "{}"
+            },
+            isPreRequestScript() {
+              return (
+                this.preRequestScript &&
+                this.preRequestScript != `// pw.env.set('variable', 'value');`
+              )
+            },
+            isTestScript() {
+              return this.testScript && this.testScript != `// pw.expect('variable').toBe('value');`
+            },
           },
-          isParams() {
-            return this.params.length
-          },
-          isAuth() {
-            return this.auth !== "None"
-          },
-          isAuthBasic() {
-            return this.httpUser && this.httpPassword
-          },
-          isRawParams() {
-            return this.rawParams && this.rawParams !== "{}"
-          },
-        })
-        this.docsMarkdown = docsMarkdown.replace(/^\s*[\r\n]/gm, "\n")
+          {
+            folderContents: folderContents,
+            folderBody: folderBody,
+          }
+        )
+        this.docsMarkdown = docsMarkdown.replace(/^\s*[\r\n]/gm, "\n\n")
       } catch (e) {
         this.$toast.error(e, {
           icon: "code",
@@ -433,7 +231,17 @@ export default {
     },
 
     useSelectedCollection(collection) {
-      let importCollection = `[${JSON.stringify(collection, null, 2)}]`
+      if (this.selected.find((coll) => coll == collection)) {
+        return
+      }
+      this.selected.push(collection)
+      let importCollection = JSON.stringify(this.selected, null, 2)
+      this.collectionJSON = JSON.stringify(JSON.parse(importCollection), null, 2)
+    },
+
+    removeSelectedCollection(collection) {
+      this.selected = this.selected.filter((coll) => coll != collection)
+      let importCollection = JSON.stringify(this.selected, null, 2)
       this.collectionJSON = JSON.stringify(JSON.parse(importCollection), null, 2)
     },
   },

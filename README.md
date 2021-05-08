@@ -6,11 +6,11 @@
     <b>Hoppscotch - Open source API development ecosystem</b>
   </p>
   <p>
-     <i>Helps you create requests faster, saving precious time on development - <a href="http://eepurl.com/g6n_P5">Subscribe</a></i>
+     <i>Helps you create requests faster, saving precious time on development - <a href="https://eepurl.com/g6n_P5">Subscribe</a></i>
   </p>
   <p>
 
-[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen?logo=github)](CODE_OF_CONDUCT.md) [![Website](https://img.shields.io/website?url=https%3A%2F%2Fhoppscotch.io&logo=hoppscotch)](https://hoppscotch.io) [![Travis Build Status](https://img.shields.io/travis/com/hoppscotch/hoppscotch/main?logo=Travis)](https://travis-ci.com/hoppscotch/hoppscotch) [![Tweet](https://img.shields.io/twitter/url?url=https%3A%2F%2Fhoppscotch.io%2F)](https://twitter.com/intent/tweet?url=https%3A%2F%2Fhoppscotch.io&text=%F0%9F%91%BD%20Hoppscotch%20%E2%80%A2%20API%20request%20builder%20-%20Helps%20you%20create%20requests%20faster%2C%20saving%20precious%20time%20on%20development&original_referer=https%3A%2F%2Ftwitter.com%2Fshare%3Ftext%3D%25F0%259F%2591%25BD%2520Hoppscotch%2520%25E2%2580%25A2%2520API%2520request%2520builder%2520-%2520Helps%2520you%2520create%2520requests%2520faster%2C%2520saving%2520precious%2520time%2520on%2520development%26url%3Dhttps%3A%2F%2Fhoppscotch.io%26hashtags%3Dhoppscotch%26via%3Dliyasthomas&via=liyasthomas&hashtags=hoppscotch)
+[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen?logo=github)](CODE_OF_CONDUCT.md) [![Website](https://img.shields.io/website?url=https%3A%2F%2Fhoppscotch.io&logo=hoppscotch)](https://hoppscotch.io) [![Travis Build Status](https://img.shields.io/travis/com/hoppscotch/hoppscotch/main?logo=Travis)](https://travis-ci.com/hoppscotch/hoppscotch) [![Tweet](https://img.shields.io/twitter/url?url=https%3A%2F%2Fhoppscotch.io%2F)](https://twitter.com/share?text=%F0%9F%91%BD%20Hoppscotch%20%E2%80%A2%20Open%20source%20API%20development%20ecosystem%20-%20Helps%20you%20create%20requests%20faster,%20saving%20precious%20time%20on%20development.&url=https://hoppscotch.io&hashtags=hoppscotch&via=hoppscotch_io)
 
   </p>
   <p>
@@ -45,7 +45,7 @@
 
 #### **Contact**
 
-[![Chat on Telegram](https://img.shields.io/badge/chat-Telegram-2CA5E0?logo=Telegram)](https://t.me/hoppscotch) [![Chat on Discord](https://img.shields.io/badge/chat-Discord-7289DA?logo=discord)](https://discord.gg/GAMWxmR)
+[![Chat on Telegram](https://img.shields.io/badge/chat-Telegram-2CA5E0?logo=Telegram)](https://hoppscotch.io/telegram) [![Chat on Discord](https://img.shields.io/badge/chat-Discord-7289DA?logo=discord)](https://hoppscotch.io/discord)
 
 #### **Support**
 
@@ -428,6 +428,7 @@ _Notes are only available for signed-in users_
 - [HTML](https://developer.mozilla.org/en-US/docs/Web/HTML)
 - [CSS](https://developer.mozilla.org/en-US/docs/Web/CSS), [SCSS](https://sass-lang.com), [Tailwind CSS](https://tailwindcss.com)
 - [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+- [TypeScript](https://www.typescriptlang.org)
 - [Vue](https://vuejs.org)
 - [Nuxt](https://nuxtjs.org)
 
@@ -456,6 +457,8 @@ _Sample keys only works with the [production build](https://hoppscotch.io)._
 
 ## **Docker**
 
+**Official container** &nbsp; [![hoppscotch/hoppscotch](https://img.shields.io/docker/pulls/hoppscotch/hoppscotch?style=social)](https://hub.docker.com/r/hoppscotch/hoppscotch)
+
 ```bash
 #pull
 docker pull hoppscotch/hoppscotch
@@ -466,6 +469,8 @@ docker build -t hoppscotch/hoppscotch:latest .
 #run
 docker run -p 3000:3000 hoppscotch/hoppscotch:latest
 ```
+
+**Legacy container** &nbsp; [![liyasthomas/postwoman](https://img.shields.io/docker/pulls/liyasthomas/postwoman?style=social)](https://hub.docker.com/r/liyasthomas/postwoman)
 
 <details>
   <summary><i>Legacy container</i></summary>
@@ -544,6 +549,16 @@ Become a financial contributor and help us sustain our community [[Support](#sup
 #### GitHub Sponsors
 
 <p align="center">
+<a href="https://simplescraper.io/?utm_source=hs" target="_blank" rel="noopener">
+<img
+  width="100"
+	src="https://raw.githubusercontent.com/hoppscotch/hoppscotch/main/assets/images/Simplescraper.png"
+	alt="Simplescraper"
+/>
+</a>
+</p>
+
+<p align="center">
 <a href="https://github.com/eldadfux" target="_blank" rel="noopener">
 <img
   width="64"
@@ -593,7 +608,7 @@ Become a financial contributor and help us sustain our community [[Support](#sup
 	alt="Erica Brescia"
 />
 </a>
-<a href="http://tom.preston-werner.com" target="_blank" rel="noopener">
+<a href="https://tom.preston-werner.com" target="_blank" rel="noopener">
 <img
   width="64"
 	src="https://github.com/mojombo.png?size=64"
