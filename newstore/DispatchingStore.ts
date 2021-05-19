@@ -3,21 +3,28 @@ import { map } from "rxjs/operators"
 import assign from "lodash/assign"
 import clone from "lodash/clone"
 
+export type Dispatchers<StoreType> = {
+  [key: string]: (currentVal: StoreType, payload: any) => Partial<StoreType>
+}
 
-type Dispatch<StoreType, DispatchersType extends Dispatchers<StoreType>, K extends keyof DispatchersType> = {
-  dispatcher: K & string,
+type Dispatch<
+  StoreType,
+  DispatchersType extends Dispatchers<StoreType>,
+  K extends keyof DispatchersType
+> = {
+  dispatcher: K & string
   payload: any
 }
 
-export type Dispatchers<StoreType> = { 
-  [ key: string ]: (currentVal: StoreType, payload: any) => Partial<StoreType> 
-}
-
-export default class DispatchingStore<StoreType, DispatchersType extends Dispatchers<StoreType>> {
-
+export default class DispatchingStore<
+  StoreType,
+  DispatchersType extends Dispatchers<StoreType>
+> {
   #state$: BehaviorSubject<StoreType>
   #dispatchers: Dispatchers<StoreType>
-  #dispatches$: Subject<Dispatch<StoreType, DispatchersType, keyof DispatchersType>> = new Subject()
+  #dispatches$: Subject<
+    Dispatch<StoreType, DispatchersType, keyof DispatchersType>
+  > = new Subject()
 
   constructor(initialValue: StoreType, dispatchers: DispatchersType) {
     this.#state$ = new BehaviorSubject(initialValue)
@@ -25,10 +32,11 @@ export default class DispatchingStore<StoreType, DispatchersType extends Dispatc
 
     this.#dispatches$
       .pipe(
-        map(
-          ({ dispatcher, payload }) => this.#dispatchers[dispatcher](this.value, payload)
+        map(({ dispatcher, payload }) =>
+          this.#dispatchers[dispatcher](this.value, payload)
         )
-      ).subscribe(val => {
+      )
+      .subscribe((val) => {
         const data = clone(this.value)
         assign(data, val)
 
@@ -48,8 +56,12 @@ export default class DispatchingStore<StoreType, DispatchersType extends Dispatc
     return this.#dispatches$
   }
 
-  dispatch({ dispatcher, payload }: Dispatch<StoreType, DispatchersType, keyof DispatchersType>) {
-    if (!this.#dispatchers[dispatcher]) throw new Error(`Undefined dispatch type '${dispatcher}'`)
+  dispatch({
+    dispatcher,
+    payload,
+  }: Dispatch<StoreType, DispatchersType, keyof DispatchersType>) {
+    if (!this.#dispatchers[dispatcher])
+      throw new Error(`Undefined dispatch type '${dispatcher}'`)
 
     this.#dispatches$.next({ dispatcher, payload })
   }

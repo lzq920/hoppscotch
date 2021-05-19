@@ -1,7 +1,7 @@
-import { settingsStore, bulkApplySettings, defaultSettings } from "./settings"
 import clone from "lodash/clone"
 import assign from "lodash/assign"
 import eq from "lodash/eq"
+import { settingsStore, bulkApplySettings, defaultSettings } from "./settings"
 
 function checkAndMigrateOldSettings() {
   const vuexData = JSON.parse(window.localStorage.getItem("vuex") || "{}")
@@ -19,17 +19,17 @@ function checkAndMigrateOldSettings() {
 }
 
 function setupSettingsPersistence() {
-  const settingsData = JSON.parse(window.localStorage.getItem("settings") || "{}")
+  const settingsData = JSON.parse(
+    window.localStorage.getItem("settings") || "{}"
+  )
 
   if (settingsData) {
     bulkApplySettings(settingsData)
   }
-  
 
-  settingsStore.subject$
-    .subscribe(settings => {
-      window.localStorage.setItem("settings", JSON.stringify(settings))
-    })
+  settingsStore.subject$.subscribe((settings) => {
+    window.localStorage.setItem("settings", JSON.stringify(settings))
+  })
 }
 
 export function setupLocalPersistence() {

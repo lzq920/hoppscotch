@@ -1,7 +1,10 @@
 <template>
   <div>
     <div
-      :class="['row-wrapper transition duration-150 ease-in-out', { 'bg-bgDarkColor': dragging }]"
+      :class="[
+        'row-wrapper transition duration-150 ease-in-out',
+        { 'bg-bgDarkColor': dragging },
+      ]"
       @dragover.prevent
       @drop.prevent="dropEvent"
       @dragover="dragging = true"
@@ -11,22 +14,29 @@
     >
       <div>
         <button class="icon" @click="toggleShowChildren">
-          <i class="material-icons" v-show="!showChildren && !isFiltered">arrow_right</i>
-          <i class="material-icons" v-show="showChildren || isFiltered">arrow_drop_down</i>
-          <i class="material-icons">folder_open</i>
-          <span>{{ folder.name }}</span>
+          <i v-show="!showChildren && !isFiltered" class="material-icons"
+            >arrow_right</i
+          >
+          <i v-show="showChildren || isFiltered" class="material-icons"
+            >arrow_drop_down</i
+          >
+          <i v-if="isSelected" class="text-green-400 material-icons"
+            >check_circle</i
+          >
+          <i v-else class="material-icons">folder_open</i>
+          <span>{{ folder.name ? folder.name : folder.title }}</span>
         </button>
       </div>
-      <v-popover>
-        <button class="tooltip-target icon" v-tooltip.left="$t('more')">
+      <v-popover v-if="!saveRequest">
+        <button v-tooltip.left="$t('more')" class="tooltip-target icon">
           <i class="material-icons">more_vert</i>
         </button>
         <template slot="popover">
           <div>
             <button
+              v-close-popover
               class="icon"
               @click="$emit('add-folder', { folder, path: folderPath })"
-              v-close-popover
             >
               <i class="material-icons">create_new_folder</i>
               <span>{{ $t("new_folder") }}</span>
@@ -34,16 +44,18 @@
           </div>
           <div>
             <button
-              class="icon"
-              @click="$emit('edit-folder', { folder, folderIndex, collectionIndex })"
               v-close-popover
+              class="icon"
+              @click="
+                $emit('edit-folder', { folder, folderIndex, collectionIndex })
+              "
             >
               <i class="material-icons">edit</i>
               <span>{{ $t("edit") }}</span>
             </button>
           </div>
           <div>
-            <button class="icon" @click="confirmRemove = true" v-close-popover>
+            <button v-close-popover class="icon" @click="confirmRemove = true">
               <i class="material-icons">delete</i>
               <span>{{ $t("delete") }}</span>
             </button>
@@ -52,21 +64,27 @@
       </v-popover>
     </div>
     <div v-show="showChildren || isFiltered">
-      <ul v-if="folder.folders && folder.folders.length" class="flex-col">
+      <ul class="flex-col">
         <li
           v-for="(subFolder, subFolderIndex) in folder.folders"
           :key="subFolder.name"
           class="ml-8 border-l border-brdColor"
         >
-          <CollectionsFolder
+          <CollectionsMyFolder
             :folder="subFolder"
             :folder-index="subFolderIndex"
             :collection-index="collectionIndex"
             :doc="doc"
+            :save-request="saveRequest"
+            :collections-type="collectionsType"
             :folder-path="`${folderPath}/${subFolderIndex}`"
+            :picked="picked"
             @add-folder="$emit('add-folder', $event)"
             @edit-folder="$emit('edit-folder', $event)"
             @edit-request="$emit('edit-request', $event)"
+            @update-team-collections="$emit('update-team-collections')"
+            @select="$emit('select', $event)"
+            @remove-request="removeRequest"
           />
         </li>
       </ul>
@@ -76,14 +94,20 @@
           :key="index"
           class="flex ml-8 border-l border-brdColor"
         >
-          <CollectionsRequest
+          <CollectionsMyRequest
             :request="request"
             :collection-index="collectionIndex"
             :folder-index="folderIndex"
             :folder-name="folder.name"
             :request-index="index"
+            :folder-path="folderPath"
             :doc="doc"
+            :picked="picked"
+            :save-request="saveRequest"
+            :collections-type="collectionsType"
             @edit-request="$emit('edit-request', $event)"
+            @select="$emit('select', $event)"
+            @remove-request="removeRequest"
           />
         </li>
       </ul>
@@ -96,7 +120,10 @@
         "
       >
         <li class="flex ml-8 border-l border-brdColor">
-          <p class="info"><i class="material-icons">not_interested</i> {{ $t("folder_empty") }}</p>
+          <p class="info">
+            <i class="material-icons">not_interested</i>
+            {{ $t("folder_empty") }}
+          </p>
         </li>
       </ul>
     </div>
@@ -114,26 +141,40 @@ import { fb } from "~/helpers/fb"
 import { getSettingSubject } from "~/newstore/settings"
 
 export default {
-  name: "folder",
+  name: "Folder",
   props: {
-    folder: Object,
-    folderIndex: Number,
-    collectionIndex: Number,
-    folderPath: String,
+    folder: { type: Object, default: () => {} },
+    folderIndex: { type: Number, default: null },
+    collectionIndex: { type: Number, default: null },
+    folderPath: { type: String, default: null },
     doc: Boolean,
+    saveRequest: Boolean,
     isFiltered: Boolean,
+    collectionsType: { type: Object, default: () => {} },
+    picked: { type: Object, default: () => {} },
   },
   data() {
     return {
       showChildren: false,
       dragging: false,
       confirmRemove: false,
+      prevCursor: "",
+      cursor: "",
     }
   },
   subscriptions() {
     return {
       SYNC_COLLECTIONS: getSettingSubject("syncCollections"),
     }
+  },
+  computed: {
+    isSelected() {
+      return (
+        this.picked &&
+        this.picked.pickedType === "my-folder" &&
+        this.picked.folderPath === this.folderPath
+      )
+    },
   },
   methods: {
     syncCollections() {
@@ -145,6 +186,15 @@ export default {
       }
     },
     toggleShowChildren() {
+      if (this.$props.saveRequest)
+        this.$emit("select", {
+          picked: {
+            pickedType: "my-folder",
+            collectionIndex: this.collectionIndex,
+            folderName: this.folder.name,
+            folderPath: this.folderPath,
+          },
+        })
       this.showChildren = !this.showChildren
     },
     removeFolder() {
@@ -178,6 +228,13 @@ export default {
         flag,
       })
       this.syncCollections()
+    },
+    removeRequest({ collectionIndex, folderName, requestIndex }) {
+      this.$emit("remove-request", {
+        collectionIndex,
+        folderName,
+        requestIndex,
+      })
     },
   },
 }

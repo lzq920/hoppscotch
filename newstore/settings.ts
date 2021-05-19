@@ -1,10 +1,9 @@
 import { pluck, distinctUntilChanged } from "rxjs/operators"
 import has from "lodash/has"
+import { Observable } from "rxjs"
 import DispatchingStore from "./DispatchingStore"
 import type { Dispatchers } from "./DispatchingStore"
-import { Observable } from "rxjs"
 import type { KeysMatching } from "~/types/ts-utils"
-
 
 export const defaultSettings = {
   syncCollections: true,
@@ -21,8 +20,8 @@ export const defaultSettings = {
     auth: true,
     httpUser: true,
     httpPassword: true,
-    bearerToken: true
-  }
+    bearerToken: true,
+  },
 }
 
 export type SettingsType = typeof defaultSettings
@@ -33,9 +32,14 @@ const dispatchers: Dispatchers<SettingsType> = {
   bulkApplySettings(_currentState, payload: Partial<SettingsType>) {
     return payload
   },
-  toggleSetting(currentState, { settingKey }: { settingKey: KeysMatching<SettingsType, boolean> }) {
+  toggleSetting(
+    currentState,
+    { settingKey }: { settingKey: KeysMatching<SettingsType, boolean> }
+  ) {
     if (!has(currentState, settingKey)) {
-      console.log(`Toggling of a non-existent setting key '${settingKey}' ignored.`)
+      console.log(
+        `Toggling of a non-existent setting key '${settingKey}' ignored.`
+      )
       return {}
     }
 
@@ -44,9 +48,14 @@ const dispatchers: Dispatchers<SettingsType> = {
 
     return result
   },
-  applySetting<K extends keyof SettingsType>(_currentState: SettingsType, { settingKey, value }: { settingKey: K, value: SettingsType[K] }) {
+  applySetting<K extends keyof SettingsType>(
+    _currentState: SettingsType,
+    { settingKey, value }: { settingKey: K; value: SettingsType[K] }
+  ) {
     if (!validKeys.includes(settingKey)) {
-      console.log(`Ignoring non-existent setting key '${settingKey}' assignment`)
+      console.log(
+        `Ignoring non-existent setting key '${settingKey}' assignment`
+      )
       return {}
     }
 
@@ -54,20 +63,21 @@ const dispatchers: Dispatchers<SettingsType> = {
     result[settingKey] = value
 
     return result
-  }
+  },
 }
-
 
 export const settingsStore = new DispatchingStore(defaultSettings, dispatchers)
 
-export function getSettingSubject<K extends keyof SettingsType>(settingKey: K): Observable<SettingsType[K]> {
+export function getSettingSubject<K extends keyof SettingsType>(
+  settingKey: K
+): Observable<SettingsType[K]> {
   return settingsStore.subject$.pipe(pluck(settingKey), distinctUntilChanged())
 }
 
 export function bulkApplySettings(settingsObj: Partial<SettingsType>) {
   settingsStore.dispatch({
     dispatcher: "bulkApplySettings",
-    payload: settingsObj
+    payload: settingsObj,
   })
 }
 
@@ -75,17 +85,20 @@ export function toggleSetting(settingKey: KeysMatching<SettingsType, boolean>) {
   settingsStore.dispatch({
     dispatcher: "toggleSetting",
     payload: {
-      settingKey
-    }
+      settingKey,
+    },
   })
 }
 
-export function applySetting<K extends keyof SettingsType>(settingKey: K, value: SettingsType[K]) {
+export function applySetting<K extends keyof SettingsType>(
+  settingKey: K,
+  value: SettingsType[K]
+) {
   settingsStore.dispatch({
     dispatcher: "applySetting",
     payload: {
       settingKey,
-      value
-    }
+      value,
+    },
   })
 }

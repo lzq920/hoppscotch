@@ -2,15 +2,32 @@
   <SmartModal v-if="show" @close="hideModal">
     <div slot="header">
       <div class="row-wrapper">
-        <h3 class="title">{{ $t("import_export") }} {{ $t("collections") }}</h3>
+        <h3 class="title">Export</h3>
         <div>
-          <v-popover>
-            <button class="tooltip-target icon" v-tooltip.left="$t('more')">
+          <button
+            v-if="mode != 'import_export'"
+            v-tooltip.left="'Back'"
+            class="tooltip-target icon"
+            @click="mode = 'import_export'"
+          >
+            <i class="material-icons">arrow_back</i>
+          </button>
+          <v-popover
+            v-if="
+              mode == 'import_export' &&
+              collectionsType.type == 'my-collections'
+            "
+          >
+            <button v-tooltip.left="$t('more')" class="tooltip-target icon">
               <i class="material-icons">more_vert</i>
             </button>
             <template slot="popover">
               <div>
-                <button class="icon" @click="readCollectionGist" v-close-popover>
+                <button
+                  v-close-popover
+                  class="icon"
+                  @click="readCollectionGist"
+                >
                   <i class="material-icons">assignment_returned</i>
                   <span>{{ $t("import_from_gist") }}</span>
                 </button>
@@ -25,12 +42,16 @@
                 }"
               >
                 <button
+                  v-close-popover
                   :disabled="
-                    !fb.currentUser ? true : fb.currentUser.provider !== 'github.com' ? true : false
+                    !fb.currentUser
+                      ? true
+                      : fb.currentUser.provider !== 'github.com'
+                      ? true
+                      : false
                   "
                   class="icon"
                   @click="createCollectionGist"
-                  v-close-popover
                 >
                   <i class="material-icons">assignment_turned_in</i>
                   <span>{{ $t("create_secret_gist") }}</span>
@@ -45,67 +66,127 @@
       </div>
     </div>
     <div slot="body" class="flex flex-col">
-      <div class="flex flex-col items-start p-2">
+      <div v-if="mode == 'import_export'" class="flex flex-col items-start p-2">
         <span
           v-tooltip="{
-            content: !fb.currentUser ? $t('login_first') : $t('replace_current'),
+            content: !fb.currentUser
+              ? $t('login_first')
+              : $t('replace_current'),
           }"
         >
-          <button :disabled="!fb.currentUser" class="icon" @click="syncCollections">
+          <button
+            v-if="collectionsType.type == 'my-collections'"
+            :disabled="!fb.currentUser"
+            class="icon"
+            @click="syncCollections"
+          >
             <i class="material-icons">folder_shared</i>
             <span>{{ $t("import_from_sync") }}</span>
           </button>
         </span>
         <button
+          v-tooltip="$t('replace_current')"
           class="icon"
           @click="openDialogChooseFileToReplaceWith"
-          v-tooltip="$t('replace_current')"
         >
           <i class="material-icons">create_new_folder</i>
           <span>{{ $t("replace_json") }}</span>
           <input
-            type="file"
-            @change="replaceWithJSON"
-            style="display: none"
             ref="inputChooseFileToReplaceWith"
+            type="file"
+            style="display: none"
             accept="application/json"
+            @change="replaceWithJSON"
           />
         </button>
         <button
+          v-tooltip="$t('preserve_current')"
           class="icon"
           @click="openDialogChooseFileToImportFrom"
-          v-tooltip="$t('preserve_current')"
         >
           <i class="material-icons">folder_special</i>
           <span>{{ $t("import_json") }}</span>
           <input
-            type="file"
-            @change="importFromJSON"
-            style="display: none"
             ref="inputChooseFileToImportFrom"
+            type="file"
+            style="display: none"
             accept="application/json"
+            @change="importFromJSON"
           />
         </button>
+        <button
+          v-if="collectionsType.type == 'team-collections'"
+          v-tooltip="$t('replace_current')"
+          class="icon"
+          @click="mode = 'import_from_my_collections'"
+        >
+          <i class="material-icons">folder_special</i>
+          <span>{{ "Import from My Collections" }}</span>
+        </button>
+        <button
+          v-tooltip="$t('show_code')"
+          class="icon"
+          @click="
+            () => {
+              mode = 'export_as_json'
+              getJSONCollection()
+            }
+          "
+        >
+          <i class="material-icons">folder_special</i>
+          <span>{{ "Export As JSON" }}</span>
+        </button>
       </div>
-      <div v-if="showJsonCode" class="row-wrapper">
+      <div v-if="mode == 'import_from_my_collections'">
+        <span class="select-wrapper">
+          <select
+            type="text"
+            autofocus
+            @change="
+              ($event) => {
+                mySelectedCollectionID = $event.target.value
+              }
+            "
+          >
+            <option
+              :key="undefined"
+              :value="undefined"
+              hidden
+              disabled
+              selected
+            >
+              Select Collection
+            </option>
+            <option
+              v-for="(collection, index) in myCollections"
+              :key="index"
+              :value="index"
+            >
+              {{ collection.name }}
+            </option>
+          </select>
+        </span>
+        <button
+          class="m-2 icon primary"
+          :disabled="mySelectedCollectionID == undefined"
+          @click="importFromMyCollections"
+        >
+          {{ $t("import") }}
+        </button>
+      </div>
+      <div v-if="mode == 'export_as_json'">
         <textarea v-model="collectionJson" rows="8" readonly></textarea>
-      </div>
-    </div>
-    <div slot="footer">
-      <div class="row-wrapper">
-        <span>
-          <SmartToggle :on="showJsonCode" @change="showJsonCode = $event">
-            {{ $t("show_code") }}
-          </SmartToggle>
-        </span>
-        <span>
-          <button class="icon" @click="hideModal">
-            {{ $t("cancel") }}
-          </button>
-          <button class="icon primary" @click="exportJSON" v-tooltip="$t('download_file')">
-            {{ $t("export") }}
-          </button>
-        </span>
+        <div class="row-wrapper">
+          <span class="m-2">
+            <button
+              v-tooltip="$t('download_file')"
+              class="icon primary"
+              @click="exportJSON"
+            >
+              {{ $t("export") }}
+            </button>
+          </span>
+        </div>
       </div>
     </div>
   </SmartModal>
@@ -114,23 +195,32 @@
 <script>
 import { fb } from "~/helpers/fb"
 import { getSettingSubject } from "~/newstore/settings"
+import * as teamUtils from "~/helpers/teams/utils"
 
 export default {
+  props: {
+    show: Boolean,
+    collectionsType: { type: Object, default: () => {} },
+  },
   data() {
     return {
       fb,
       showJsonCode: false,
+      mode: "import_export",
+      mySelectedCollectionID: undefined,
+      collectionJson: "",
     }
   },
   subscriptions() {
-    SYNC_COLLECTIONS: getSettingSubject("syncCollections")
-  },
-  props: {
-    show: Boolean,
+    return {
+      SYNC_COLLECTIONS: getSettingSubject("syncCollections"),
+    }
   },
   computed: {
-    collectionJson() {
-      return JSON.stringify(this.$store.state.postwoman.collections, null, 2)
+    myCollections() {
+      return fb.currentUser !== null
+        ? fb.currentCollections
+        : this.$store.state.postwoman.collections
     },
   },
   methods: {
@@ -141,7 +231,7 @@ export default {
           {
             files: {
               "hoppscotch-collections.json": {
-                content: this.collectionJson,
+                content: this.getJSONCollection(),
               },
             },
           },
@@ -152,11 +242,11 @@ export default {
             },
           }
         )
-        .then(({ html_url }) => {
+        .then((res) => {
           this.$toast.success(this.$t("gist_created"), {
             icon: "done",
           })
-          window.open(html_url)
+          window.open(res.html_url)
         })
         .catch((error) => {
           this.$toast.error(this.$t("something_went_wrong"), {
@@ -166,7 +256,7 @@ export default {
         })
     },
     async readCollectionGist() {
-      let gist = prompt(this.$t("enter_gist_url"))
+      const gist = prompt(this.$t("enter_gist_url"))
       if (!gist) return
       await this.$axios
         .$get(`https://api.github.com/gists/${gist.split("/").pop()}`, {
@@ -175,8 +265,11 @@ export default {
           },
         })
         .then(({ files }) => {
-          let collections = JSON.parse(Object.values(files)[0].content)
-          this.$store.commit("postwoman/replaceCollections", { data: collections, flag: "rest" })
+          const collections = JSON.parse(Object.values(files)[0].content)
+          this.$store.commit("postwoman/replaceCollections", {
+            data: collections,
+            flag: "rest",
+          })
           this.fileImported()
           this.syncToFBCollections()
         })
@@ -186,6 +279,8 @@ export default {
         })
     },
     hideModal() {
+      this.mode = "import_export"
+      this.mySelectedCollectionID = undefined
       this.$emit("hide-modal")
     },
     openDialogChooseFileToReplaceWith() {
@@ -195,60 +290,157 @@ export default {
       this.$refs.inputChooseFileToImportFrom.click()
     },
     replaceWithJSON() {
-      let reader = new FileReader()
+      const reader = new FileReader()
       reader.onload = ({ target }) => {
-        let content = target.result
+        const content = target.result
         let collections = JSON.parse(content)
         if (collections[0]) {
-          let [name, folders, requests] = Object.keys(collections[0])
-          if (name === "name" && folders === "folders" && requests === "requests") {
+          const [name, folders, requests] = Object.keys(collections[0])
+          if (
+            name === "name" &&
+            folders === "folders" &&
+            requests === "requests"
+          ) {
             // Do nothing
           }
-        } else if (collections.info && collections.info.schema.includes("v2.1.0")) {
+        } else if (
+          collections.info &&
+          collections.info.schema.includes("v2.1.0")
+        ) {
           collections = [this.parsePostmanCollection(collections)]
         } else {
           this.failedImport()
-          return
         }
-        this.$store.commit("postwoman/replaceCollections", { data: collections, flag: "rest" })
-        this.fileImported()
-        this.syncToFBCollections()
+        if (this.collectionsType.type === "team-collections") {
+          teamUtils
+            .replaceWithJSON(
+              this.$apollo,
+              collections,
+              this.collectionsType.selectedTeam.id
+            )
+            .then((status) => {
+              if (status) {
+                this.fileImported()
+              } else {
+                this.failedImport()
+              }
+            })
+            .catch((error) => {
+              console.log(error)
+              this.failedImport()
+            })
+        } else {
+          this.$store.commit("postwoman/replaceCollections", {
+            data: collections,
+            flag: "rest",
+          })
+          this.fileImported()
+          this.syncToFBCollections()
+        }
       }
       reader.readAsText(this.$refs.inputChooseFileToReplaceWith.files[0])
       this.$refs.inputChooseFileToReplaceWith.value = ""
     },
     importFromJSON() {
-      let reader = new FileReader()
+      const reader = new FileReader()
       reader.onload = ({ target }) => {
-        let content = target.result
+        const content = target.result
         let collections = JSON.parse(content)
         if (collections[0]) {
-          let [name, folders, requests] = Object.keys(collections[0])
-          if (name === "name" && folders === "folders" && requests === "requests") {
+          const [name, folders, requests] = Object.keys(collections[0])
+          if (
+            name === "name" &&
+            folders === "folders" &&
+            requests === "requests"
+          ) {
             // Do nothing
           }
-        } else if (collections.info && collections.info.schema.includes("v2.1.0")) {
-          //replace the variables, postman uses {{var}}, Hoppscotch uses <<var>>
-          collections = JSON.parse(content.replaceAll(/{{([a-z]+)}}/gi, "<<$1>>"))
+        } else if (
+          collections.info &&
+          collections.info.schema.includes("v2.1.0")
+        ) {
+          // replace the variables, postman uses {{var}}, Hoppscotch uses <<var>>
+          collections = JSON.parse(
+            content.replaceAll(/{{([a-z]+)}}/gi, "<<$1>>")
+          )
           collections = [this.parsePostmanCollection(collections)]
         } else {
           this.failedImport()
           return
         }
-        this.$store.commit("postwoman/importCollections", { data: collections, flag: "rest" })
-        this.fileImported()
-        this.syncToFBCollections()
+        if (this.collectionsType.type === "team-collections") {
+          teamUtils
+            .importFromJSON(
+              this.$apollo,
+              collections,
+              this.collectionsType.selectedTeam.id
+            )
+            .then((status) => {
+              if (status) {
+                this.$emit("update-team-collections")
+                this.fileImported()
+              } else {
+                this.failedImport()
+              }
+            })
+            .catch((error) => {
+              console.log(error)
+              this.failedImport()
+            })
+        } else {
+          this.$store.commit("postwoman/importCollections", {
+            data: collections,
+            flag: "rest",
+          })
+          this.syncToFBCollections()
+          this.fileImported()
+        }
       }
       reader.readAsText(this.$refs.inputChooseFileToImportFrom.files[0])
       this.$refs.inputChooseFileToImportFrom.value = ""
     },
+    importFromMyCollections() {
+      teamUtils
+        .importFromMyCollections(
+          this.$apollo,
+          this.mySelectedCollectionID,
+          this.collectionsType.selectedTeam.id
+        )
+        .then((success) => {
+          if (success) {
+            this.fileImported()
+            this.$emit("update-team-collections")
+          } else {
+            this.failedImport()
+          }
+        })
+        .catch((error) => {
+          console.log(error)
+          this.failedImport()
+        })
+    },
+    async getJSONCollection() {
+      if (this.collectionsType.type === "my-collections") {
+        this.collectionJson = JSON.stringify(
+          this.$store.state.postwoman.collections,
+          null,
+          2
+        )
+      } else {
+        this.collectionJson = await teamUtils.exportAsJSON(
+          this.$apollo,
+          this.collectionsType.selectedTeam.id
+        )
+      }
+      return this.collectionJson
+    },
     exportJSON() {
       let text = this.collectionJson
       text = text.replace(/\n/g, "\r\n")
-      let blob = new Blob([text], {
+      const blob = new Blob([text], {
         type: "text/json",
       })
-      let anchor = document.createElement("a")
+      const anchor = document.createElement("a")
       anchor.download = "hoppscotch-collection.json"
       anchor.href = window.URL.createObjectURL(blob)
       anchor.target = "_blank"
@@ -286,7 +478,7 @@ export default {
       })
     },
     parsePostmanCollection({ info, name, item }) {
-      let postwomanCollection = {
+      const postwomanCollection = {
         name: "",
         folders: [],
         requests: [],
@@ -295,26 +487,39 @@ export default {
       postwomanCollection.name = info ? info.name : name
 
       if (item && item.length > 0) {
-        for (let collectionItem of item) {
+        for (const collectionItem of item) {
           if (collectionItem.request) {
-            if (postwomanCollection.hasOwnProperty("folders")) {
+            if (
+              Object.prototype.hasOwnProperty.call(
+                postwomanCollection,
+                "folders"
+              )
+            ) {
               postwomanCollection.name = info ? info.name : name
-              postwomanCollection.requests.push(this.parsePostmanRequest(collectionItem))
+              postwomanCollection.requests.push(
+                this.parsePostmanRequest(collectionItem)
+              )
             } else {
-              postwomanCollection.name = name ? name : ""
-              postwomanCollection.requests.push(this.parsePostmanRequest(collectionItem))
+              postwomanCollection.name = name || ""
+              postwomanCollection.requests.push(
+                this.parsePostmanRequest(collectionItem)
+              )
             }
           } else if (this.hasFolder(collectionItem)) {
-            postwomanCollection.folders.push(this.parsePostmanCollection(collectionItem))
+            postwomanCollection.folders.push(
+              this.parsePostmanCollection(collectionItem)
+            )
           } else {
-            postwomanCollection.requests.push(this.parsePostmanRequest(collectionItem))
+            postwomanCollection.requests.push(
+              this.parsePostmanRequest(collectionItem)
+            )
           }
         }
       }
       return postwomanCollection
     },
     parsePostmanRequest({ name, request }) {
-      let pwRequest = {
+      const pwRequest = {
         url: "",
         path: "",
         method: "",
@@ -335,21 +540,27 @@ export default {
 
       pwRequest.name = name
       if (request.url) {
-        let requestObjectUrl = request.url.raw.match(/^(.+:\/\/[^\/]+|{[^\/]+})(\/[^\?]+|).*$/)
+        const requestObjectUrl = request.url.raw.match(
+          /^(.+:\/\/[^/]+|{[^/]+})(\/[^?]+|).*$/
+        )
         if (requestObjectUrl) {
           pwRequest.url = requestObjectUrl[1]
           pwRequest.path = requestObjectUrl[2] ? requestObjectUrl[2] : ""
         }
       }
       pwRequest.method = request.method
-      let itemAuth = request.auth ? request.auth : ""
-      let authType = itemAuth ? itemAuth.type : ""
+      const itemAuth = request.auth ? request.auth : ""
+      const authType = itemAuth ? itemAuth.type : ""
       if (authType === "basic") {
         pwRequest.auth = "Basic Auth"
         pwRequest.httpUser =
-          itemAuth.basic[0].key === "username" ? itemAuth.basic[0].value : itemAuth.basic[1].value
+          itemAuth.basic[0].key === "username"
+            ? itemAuth.basic[0].value
+            : itemAuth.basic[1].value
         pwRequest.httpPassword =
-          itemAuth.basic[0].key === "password" ? itemAuth.basic[0].value : itemAuth.basic[1].value
+          itemAuth.basic[0].key === "password"
+            ? itemAuth.basic[0].value
+            : itemAuth.basic[1].value
       } else if (authType === "oauth2") {
         pwRequest.auth = "OAuth 2.0"
         pwRequest.bearerToken =
@@ -360,28 +571,28 @@ export default {
         pwRequest.auth = "Bearer Token"
         pwRequest.bearerToken = itemAuth.bearer[0].value
       }
-      let requestObjectHeaders = request.header
+      const requestObjectHeaders = request.header
       if (requestObjectHeaders) {
         pwRequest.headers = requestObjectHeaders
-        for (let header of pwRequest.headers) {
+        for (const header of pwRequest.headers) {
           delete header.name
           delete header.type
         }
       }
       if (request.url) {
-        let requestObjectParams = request.url.query
+        const requestObjectParams = request.url.query
         if (requestObjectParams) {
           pwRequest.params = requestObjectParams
-          for (let param of pwRequest.params) {
+          for (const param of pwRequest.params) {
             delete param.disabled
           }
         }
       }
       if (request.body) {
         if (request.body.mode === "urlencoded") {
-          let params = request.body.urlencoded
-          pwRequest.bodyParams = params ? params : []
-          for (let param of pwRequest.bodyParams) {
+          const params = request.body.urlencoded
+          pwRequest.bodyParams = params || []
+          for (const param of pwRequest.bodyParams) {
             delete param.type
           }
         } else if (request.body.mode === "raw") {
@@ -392,7 +603,7 @@ export default {
       return pwRequest
     },
     hasFolder(item) {
-      return item.hasOwnProperty("item")
+      return Object.prototype.hasOwnProperty.call(item, "item")
     },
   },
 }

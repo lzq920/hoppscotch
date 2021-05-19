@@ -13,10 +13,10 @@
     <div slot="body" class="flex flex-col">
       <label for="selectLabel">{{ $t("label") }}</label>
       <input
-        type="text"
         id="selectLabel"
         v-model="name"
-        :placeholder="editingCollection.name"
+        type="text"
+        :placeholder="placeholderCollName"
         @keyup.enter="saveCollection"
       />
     </div>
@@ -37,53 +37,23 @@
 </template>
 
 <script>
-import { fb } from "~/helpers/fb"
-import { getSettingSubject } from "~/newstore/settings"
-
 export default {
   props: {
     show: Boolean,
-    editingCollection: Object,
-    editingCollectionIndex: Number,
+    placeholderCollName: { type: String, default: null },
   },
   data() {
     return {
       name: undefined,
     }
   },
-  subscriptions() {
-    return {
-      SYNC_COLLECTIONS: getSettingSubject("syncCollections"),
-    }
-  },
   methods: {
-    syncCollections() {
-      if (fb.currentUser !== null && this.SYNC_COLLECTIONS) {
-        fb.writeCollections(
-          JSON.parse(JSON.stringify(this.$store.state.postwoman.collections)),
-          "collections"
-        )
-      }
-    },
     saveCollection() {
-      if (!this.$data.name) {
-        this.$toast.info(this.$t("invalid_collection_name"))
-        return
-      }
-      const collectionUpdated = {
-        ...this.$props.editingCollection,
-        name: this.$data.name,
-      }
-      this.$store.commit("postwoman/editCollection", {
-        collection: collectionUpdated,
-        collectionIndex: this.$props.editingCollectionIndex,
-        flag: "rest",
-      })
-      this.$emit("hide-modal")
-      this.syncCollections()
+      this.$emit("submit", this.name)
     },
     hideModal() {
       this.$emit("hide-modal")
+      this.$data.name = undefined
     },
   },
 }
