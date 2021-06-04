@@ -1,4 +1,5 @@
 <template>
+  <!-- eslint-disable -->
   <div class="page">
     <div class="content">
       <div class="page-columns inner-left">
@@ -552,6 +553,7 @@
     </div>
 
     <CollectionsSaveRequest
+      mode="rest"
       :show="showSaveRequestModal"
       @hide-modal="hideRequestModal"
       :editing-request="editRequest"
@@ -651,6 +653,8 @@
 </template>
 
 <script>
+/* eslint-disable */
+
 import url from "url"
 import querystring from "querystring"
 import parseCurlCommand from "~/helpers/curlparser"
@@ -666,6 +670,7 @@ import { httpValid } from "~/helpers/utils/valid"
 import { knownContentTypes, isJSONContentType } from "~/helpers/utils/contenttypes"
 import { generateCodeWithGenerator } from "~/helpers/codegen/codegen"
 import { getSettingSubject, applySetting } from "~/newstore/settings"
+import { addRESTHistoryEntry } from "~/newstore/history"
 import clone from "lodash/clone"
 
 export default {
@@ -1406,10 +1411,7 @@ export default {
             entry.url = parseTemplateString(entry.url, environmentVariables)
           }
 
-          this.$refs.historyComponent.addEntry(entry)
-          if (fb.currentUser !== null && this.SYNC_COLLECTIONS) {
-            fb.writeHistory(entry)
-          }
+          addRESTHistoryEntry(entry)
         })()
       } catch (error) {
         this.runningRequest = false
@@ -1464,10 +1466,7 @@ export default {
               entry.url = parseTemplateString(entry.url, environmentVariables)
             }
 
-            this.$refs.historyComponent.addEntry(entry)
-            if (fb.currentUser !== null && this.SYNC_HISTORY) {
-              fb.writeHistory(entry)
-            }
+            addRESTHistoryEntry(entry)
             return
           } else {
             this.response.status = error.message

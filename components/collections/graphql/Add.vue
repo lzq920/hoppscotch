@@ -36,47 +36,38 @@
   </SmartModal>
 </template>
 
-<script>
-import { fb } from "~/helpers/fb"
+<script lang="ts">
+import Vue from "vue"
+import { addGraphqlCollection } from "~/newstore/collections"
 
-export default {
+export default Vue.extend({
   props: {
     show: Boolean,
   },
   data() {
     return {
-      name: undefined,
+      name: null as string | null,
     }
   },
   methods: {
-    syncCollections() {
-      if (fb.currentUser !== null && fb.currentSettings[0]) {
-        if (fb.currentSettings[0].value) {
-          fb.writeCollections(
-            JSON.parse(
-              JSON.stringify(this.$store.state.postwoman.collectionsGraphql)
-            ),
-            "collectionsGraphql"
-          )
-        }
-      }
-    },
     addNewCollection() {
-      if (!this.$data.name) {
-        this.$toast.info(this.$t("invalid_collection_name"))
+      if (!this.name) {
+        this.$toast.info(this.$t("invalid_collection_name").toString())
         return
       }
-      this.$store.commit("postwoman/addNewCollection", {
-        name: this.$data.name,
-        flag: "graphql",
+
+      addGraphqlCollection({
+        name: this.name,
+        folders: [],
+        requests: [],
       })
-      this.$emit("hide-modal")
-      this.syncCollections()
+
+      this.hideModal()
     },
     hideModal() {
+      this.name = null
       this.$emit("hide-modal")
-      this.$data.name = undefined
     },
   },
-}
+})
 </script>

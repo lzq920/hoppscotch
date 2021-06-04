@@ -2,7 +2,20 @@ import firebase from "firebase/app"
 import "firebase/firestore"
 import "firebase/auth"
 import { ReplaySubject } from "rxjs"
-import { getSettingSubject, applySetting } from "~/newstore/settings"
+import { applySettingFB, settingsStore } from "~/newstore/settings"
+import {
+  restHistoryStore,
+  setRESTHistoryEntries,
+  graphqlHistoryStore,
+  setGraphqlHistoryEntries,
+  HISTORY_LIMIT,
+} from "~/newstore/history"
+import {
+  restCollectionStore,
+  setRESTCollections,
+  graphqlCollectionStore,
+  setGraphqlCollections,
+} from "~/newstore/collections"
 
 // Initialize Firebase, copied from cloud console
 const firebaseConfig = {
@@ -15,9 +28,6 @@ const firebaseConfig = {
   appId: process.env.APP_ID,
   measurementId: process.env.MEASUREMENT_ID,
 }
-
-const historyLimit = 50
-const graphqlHistoryLimit = 50
 
 export const authProviders = {
   google: () => new firebase.auth.GoogleAuthProvider(),
@@ -35,32 +45,85 @@ export class FirebaseInstance {
     this.idToken = null
     this.currentFeeds = []
     this.currentSettings = []
-    this.currentHistory = []
-    this.currentGraphqlHistory = []
-    this.currentCollections = []
-    this.currentGraphqlCollections = []
     this.currentEnvironments = []
 
     this.currentUser$ = new ReplaySubject(1)
     this.idToken$ = new ReplaySubject(1)
 
     let loadedSettings = false
+    let loadedRESTHistory = false
+    let loadedGraphqlHistory = false
+    let loadedRESTCollections = false
+    let loadedGraphqlCollections = false
 
-    getSettingSubject("syncCollections").subscribe((status) => {
-      if (this.currentUser && loadedSettings) {
-        this.writeSettings("syncCollections", status)
+    graphqlCollectionStore.subject$.subscribe(({ state }) => {
+      if (
+        loadedGraphqlCollections &&
+        this.currentUser &&
+        settingsStore.value.syncCollections
+      ) {
+        this.writeCollections(state, "collectionsGraphql")
       }
     })
 
-    getSettingSubject("syncHistory").subscribe((status) => {
-      if (this.currentUser && loadedSettings) {
-        this.writeSettings("syncHistory", status)
+    restCollectionStore.subject$.subscribe(({ state }) => {
+      if (
+        loadedRESTCollections &&
+        this.currentUser &&
+        settingsStore.value.syncCollections
+      ) {
+        this.writeCollections(state, "collections")
       }
     })
 
-    getSettingSubject("syncEnvironments").subscribe((status) => {
-      if (this.currentUser && loadedSettings) {
-        this.writeSettings("syncEnvironments", status)
+    restHistoryStore.dispatches$.subscribe((dispatch) => {
+      if (
+        loadedRESTHistory &&
+        this.currentUser &&
+        settingsStore.value.syncHistory
+      ) {
+        if (dispatch.dispatcher === "addEntry") {
+          this.writeHistory(dispatch.payload.entry)
+        } else if (dispatch.dispatcher === "deleteEntry") {
+          this.deleteHistory(dispatch.payload.entry)
+        } else if (dispatch.dispatcher === "clearHistory") {
+          this.clearHistory()
+        } else if (dispatch.dispatcher === "toggleStar") {
+          this.toggleStar(dispatch.payload.entry)
+        }
+      }
+    })
+
+    graphqlHistoryStore.dispatches$.subscribe((dispatch) => {
+      if (
+        loadedGraphqlHistory &&
+        this.currentUser &&
+        settingsStore.value.syncHistory
+      ) {
+        if (dispatch.dispatcher === "addEntry") {
+          this.writeGraphqlHistory(dispatch.payload.entry)
+        } else if (dispatch.dispatcher === "deleteEntry") {
+          this.deleteGraphqlHistory(dispatch.payload.entry)
+        } else if (dispatch.dispatcher === "clearHistory") {
+          this.clearGraphqlHistory()
+        } else if (dispatch.dispatcher === "toggleStar") {
+          this.toggleGraphqlHistoryStar(dispatch.payload.entry)
+        }
+      }
+    })
+
+    settingsStore.dispatches$.subscribe((dispatch) => {
+      if (this.currentSettings && loadedSettings) {
+        if (dispatch.dispatcher === "bulkApplySettings") {
+          Object.keys(dispatch.payload).forEach((key) => {
+            this.writeSettings(key, dispatch.payload[key])
+          })
+        } else if (dispatch.dispatcher !== "applySettingFB") {
+          this.writeSettings(
+            dispatch.payload.settingKey,
+            settingsStore.value[dispatch.payload.settingKey]
+          )
+        }
       }
     })
 
@@ -130,7 +193,7 @@ export class FirebaseInstance {
 
             settings.forEach((e) => {
               if (e && e.name && e.value != null) {
-                applySetting(e.name, e.value)
+                applySettingFB(e.name, e.value)
               }
             })
 
@@ -141,30 +204,38 @@ export class FirebaseInstance {
           .doc(this.currentUser.uid)
           .collection("history")
           .orderBy("updatedOn", "desc")
-          .limit(historyLimit)
+          .limit(HISTORY_LIMIT)
           .onSnapshot((historyRef) => {
             const history = []
+
             historyRef.forEach((doc) => {
               const entry = doc.data()
               entry.id = doc.id
               history.push(entry)
             })
-            this.currentHistory = history
+
+            setRESTHistoryEntries(history)
+
+            loadedRESTHistory = true
           })
 
         this.usersCollection
           .doc(this.currentUser.uid)
           .collection("graphqlHistory")
           .orderBy("updatedOn", "desc")
-          .limit(graphqlHistoryLimit)
+          .limit(HISTORY_LIMIT)
           .onSnapshot((historyRef) => {
             const history = []
+
             historyRef.forEach((doc) => {
               const entry = doc.data()
               entry.id = doc.id
               history.push(entry)
             })
-            this.currentGraphqlHistory = history
+
+            setGraphqlHistoryEntries(history)
+
+            loadedGraphqlHistory = true
           })
 
         this.usersCollection
@@ -177,9 +248,16 @@ export class FirebaseInstance {
               collection.id = doc.id
               collections.push(collection)
             })
+
+            // Prevent infinite ping-pong of updates
+            loadedRESTCollections = false
+
+            // TODO: Wth is with collections[0]
             if (collections.length > 0) {
-              this.currentCollections = collections[0].collection
+              setRESTCollections(collections[0].collection)
             }
+
+            loadedRESTCollections = true
           })
 
         this.usersCollection
@@ -192,9 +270,16 @@ export class FirebaseInstance {
               collection.id = doc.id
               collections.push(collection)
             })
+
+            // Prevent infinite ping-pong of updates
+            loadedGraphqlCollections = false
+
+            // TODO: Wth is with collections[0]
             if (collections.length > 0) {
-              this.currentGraphqlCollections = collections[0].collection
+              setGraphqlCollections(collections[0].collection)
             }
+
+            loadedGraphqlCollections = true
           })
 
         this.usersCollection
@@ -370,13 +455,13 @@ export class FirebaseInstance {
     await Promise.all(docs.map((e) => this.deleteGraphqlHistory(e)))
   }
 
-  async toggleStar(entry, value) {
+  async toggleStar(entry) {
     try {
       await this.usersCollection
         .doc(this.currentUser.uid)
         .collection("history")
         .doc(entry.id)
-        .update({ star: value })
+        .update({ star: !entry.star })
     } catch (e) {
       console.error("error deleting", entry, e)
 
@@ -384,13 +469,13 @@ export class FirebaseInstance {
     }
   }
 
-  async toggleGraphqlHistoryStar(entry, value) {
+  async toggleGraphqlHistoryStar(entry) {
     try {
       await this.usersCollection
         .doc(this.currentUser.uid)
         .collection("graphqlHistory")
         .doc(entry.id)
-        .update({ star: value })
+        .update({ star: !entry.star })
     } catch (e) {
       console.error("error deleting", entry, e)
 
@@ -415,7 +500,6 @@ export class FirebaseInstance {
         .set(cl)
     } catch (e) {
       console.error("error updating", cl, e)
-
       throw e
     }
   }

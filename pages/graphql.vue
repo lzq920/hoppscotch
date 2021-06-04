@@ -467,7 +467,8 @@
         </SmartTabs>
       </aside>
     </div>
-    <CollectionsGraphqlSaveRequest
+    <CollectionsSaveRequest
+      mode="graphql"
       :show="showSaveRequestModal"
       :editing-request="editRequest"
       @hide-modal="hideRequestModal"
@@ -481,7 +482,7 @@ import { commonHeaders } from "~/helpers/headers"
 import { getPlatformSpecialKey } from "~/helpers/platformutils"
 import { sendNetworkRequest } from "~/helpers/network"
 import { getSettingSubject } from "~/newstore/settings"
-import { fb } from "~/helpers/fb"
+import { addGraphqlHistoryEntry } from "~/newstore/history"
 
 export default {
   beforeRouteLeave(_to, _from, next) {
@@ -853,12 +854,7 @@ export default {
           duration,
         }
 
-        this.$refs.graphqlHistoryComponent.addEntry(entry)
-        if (fb.currentUser !== null && fb.currentSettings[2]) {
-          if (fb.currentSettings[2].value) {
-            fb.writeGraphqlHistory(entry)
-          }
-        }
+        addGraphqlHistoryEntry(entry)
       } catch (error) {
         this.response = `${error}. ${this.$t("check_console_details")}`
         this.$nuxt.$loading.finish()

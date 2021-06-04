@@ -36,30 +36,34 @@
   </SmartModal>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import Vue from "vue"
+
+export default Vue.extend({
   props: {
     show: Boolean,
-    folder: { type: Object, default: () => {} },
     folderPath: { type: String, default: null },
     collectionIndex: { type: Number, default: null },
   },
   data() {
     return {
-      name: undefined,
+      name: null,
     }
   },
   methods: {
     addFolder() {
+      // TODO: Blocking when name is null ?
+
       this.$emit("add-folder", {
         name: this.name,
-        folder: this.folder,
         path: this.folderPath || `${this.collectionIndex}`,
       })
+      this.hideModal()
     },
     hideModal() {
+      this.name = null
       this.$emit("hide-modal")
     },
   },
-}
+})
 </script>

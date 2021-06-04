@@ -36,48 +36,30 @@
   </SmartModal>
 </template>
 
-<script>
-import { fb } from "~/helpers/fb"
+<script lang="ts">
+import Vue from "vue"
+import { editGraphqlFolder } from "~/newstore/collections"
 
-export default {
+export default Vue.extend({
   props: {
     show: Boolean,
-    collectionIndex: { type: Number, default: null },
     folder: { type: Object, default: () => {} },
-    folderIndex: { type: Number, default: null },
+    folderPath: { type: String, default: null },
   },
   data() {
     return {
-      name: undefined,
+      name: null,
     }
   },
   methods: {
-    syncCollections() {
-      if (fb.currentUser !== null && fb.currentSettings[0]) {
-        if (fb.currentSettings[0].value) {
-          fb.writeCollections(
-            JSON.parse(
-              JSON.stringify(this.$store.state.postwoman.collectionsGraphql)
-            ),
-            "collectionsGraphql"
-          )
-        }
-      }
-    },
     editFolder() {
-      this.$store.commit("postwoman/editFolder", {
-        collectionIndex: this.$props.collectionIndex,
-        folder: { ...this.$props.folder, name: this.$data.name },
-        folderIndex: this.$props.folderIndex,
-        folderName: this.$props.folder.name,
-        flag: "graphql",
-      })
+      editGraphqlFolder(this.folderPath, { ...this.folder, name: this.name })
       this.hideModal()
-      this.syncCollections()
     },
     hideModal() {
+      this.name = null
       this.$emit("hide-modal")
     },
   },
-}
+})
 </script>

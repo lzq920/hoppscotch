@@ -6,7 +6,7 @@
     <ul v-for="feed in fb.currentFeeds" :key="feed.id" class="flex-col">
       <div data-test="list-item" class="show-on-large-screen">
         <li class="info">
-          <label data-test="list-label">
+          <label data-test="list-label" class="break-all">
             {{ feed.label || $t("no_label") }}
           </label>
         </li>
@@ -16,7 +16,7 @@
       </div>
       <div class="show-on-large-screen">
         <li data-test="list-message" class="info clamb-3">
-          <label>{{ feed.message || $t("empty") }}</label>
+          <label class="break-all">{{ feed.message || $t("empty") }}</label>
         </li>
       </div>
     </ul>
@@ -27,19 +27,6 @@
     </li>
   </ul>
 </template>
-
-<style scoped lang="scss">
-.virtual-list {
-  max-height: calc(100vh - 270px);
-}
-
-.clamb-3 {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  @apply overflow-hidden;
-}
-</style>
 
 <script>
 import { fb } from "~/helpers/fb"
@@ -60,3 +47,16 @@ export default {
   },
 }
 </script>
+
+<style scoped lang="scss">
+.virtual-list {
+  max-height: calc(100vh - 270px);
+}
+
+.clamb-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  @apply overflow-hidden;
+}
+</style>
