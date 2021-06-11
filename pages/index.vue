@@ -11,7 +11,7 @@
                 <v-popover>
                   <input
                     id="method"
-                    class="method"
+                    class="drop-down-input"
                     v-model="method"
                     :readonly="!customMethod"
                     autofocus
@@ -85,12 +85,38 @@
             <ul>
               <li>
                 <label for="contentType" class="text-sm">{{ $t("content_type") }}</label>
-                <SmartAutoComplete
+                <span class="select-wrapper">
+                  <v-popover>
+                    <input
+                      id="contentType"
+                      class="drop-down-input"
+                      v-model="contentType"
+                      readonly
+                    />
+                    <template slot="popover">
+                      <div
+                        v-for="(contentTypeMenuItem, index) in validContentTypes"
+                        :key="`content-type-${index}`"
+                      >
+                        <button
+                          class="icon"
+                          @click="
+                            contentType = contentTypeMenuItem
+                          "
+                          v-close-popover
+                        >
+                          {{ contentTypeMenuItem }}
+                        </button>
+                      </div>
+                    </template>
+                  </v-popover>
+                </span>
+                <!-- <SmartAutoComplete
                   :source="validContentTypes"
                   :spellcheck="false"
                   v-model="contentType"
                   styles="text-sm"
-                />
+                /> -->
               </li>
             </ul>
             <ul>
@@ -541,7 +567,7 @@
             </SmartTab>
 
             <SmartTab :id="'env'" :label="$t('environments')">
-              <Environments @use-environment="useSelectedEnvironment($event)" />
+              <Environments />
             </SmartTab>
 
             <SmartTab :id="'notes'" :label="$t('notes')">
@@ -818,8 +844,8 @@ export default {
     },
     method() {
       this.contentType = ["POST", "PUT", "PATCH", "DELETE"].includes(this.method)
-        ? "application/json"
-        : ""
+        ? this.contentType
+        : "application/json"
     },
     preRequestScript(val, oldVal) {
       this.uri = this.uri
@@ -1191,29 +1217,6 @@ export default {
     },
   },
   methods: {
-    useSelectedEnvironment(args) {
-      let environment = args.environment
-      let environments = args.environments
-      let preRequestScriptString = ""
-      for (let variable of environment.variables) {
-        preRequestScriptString += `pw.env.set('${variable.key}', '${variable.value}');\n`
-      }
-      for (let env of environments) {
-        if (env.name === environment.name) {
-          continue
-        }
-
-        if (env.name === "Globals" || env.name === "globals") {
-          preRequestScriptString += this.useSelectedEnvironment({
-            environment: env,
-            environments,
-          })
-        }
-      }
-      this.preRequestScript = preRequestScriptString
-      this.showPreRequestScript = true
-      return preRequestScriptString
-    },
     checkCollections() {
       const checkCollectionAvailability =
         this.$store.state.postwoman.collections &&

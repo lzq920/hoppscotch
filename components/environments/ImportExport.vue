@@ -56,28 +56,12 @@
     </div>
     <div slot="body" class="flex flex-col">
       <div class="flex flex-col items-start p-2">
-        <span
-          v-tooltip="{
-            content: !fb.currentUser
-              ? $t('login_first')
-              : $t('replace_current'),
-          }"
-        >
-          <button
-            :disabled="!fb.currentUser"
-            class="icon"
-            @click="syncEnvironments"
-          >
-            <i class="material-icons">folder_shared</i>
-            <span>{{ $t("import_from_sync") }}</span>
-          </button>
-        </span>
         <button
           v-tooltip="$t('replace_current')"
           class="icon"
           @click="openDialogChooseFileToReplaceWith"
         >
-          <i class="material-icons">create_new_folder</i>
+          <i class="material-icons">folder_special</i>
           <span>{{ $t("replace_json") }}</span>
           <input
             ref="inputChooseFileToReplaceWith"
@@ -92,7 +76,7 @@
           class="icon"
           @click="openDialogChooseFileToImportFrom"
         >
-          <i class="material-icons">folder_special</i>
+          <i class="material-icons">create_new_folder</i>
           <span>{{ $t("import_json") }}</span>
           <input
             ref="inputChooseFileToImportFrom"
@@ -102,30 +86,16 @@
             @change="importFromJSON"
           />
         </button>
-      </div>
-      <div v-if="showJsonCode" class="row-wrapper">
-        <textarea v-model="environmentJson" rows="8" readonly></textarea>
-      </div>
-    </div>
-    <div slot="footer">
-      <div class="row-wrapper">
-        <span>
-          <SmartToggle :on="showJsonCode" @change="showJsonCode = $event">
-            {{ $t("show_code") }}
-          </SmartToggle>
-        </span>
-        <span>
-          <button class="icon" @click="hideModal">
-            {{ $t("cancel") }}
-          </button>
-          <button
-            v-tooltip="$t('download_file')"
-            class="icon primary"
-            @click="exportJSON"
-          >
-            {{ $t("export") }}
-          </button>
-        </span>
+        <button
+          v-tooltip="$t('download_file')"
+          class="icon"
+          @click="exportJSON"
+        >
+          <i class="material-icons">drive_file_move</i>
+          <span>
+            {{ $t("export_as_json") }}
+          </span>
+        </button>
       </div>
     </div>
   </SmartModal>
@@ -133,7 +103,11 @@
 
 <script>
 import { fb } from "~/helpers/fb"
-import { getSettingSubject } from "~/newstore/settings"
+import {
+  environments$,
+  replaceEnvironments,
+  appendEnvironments,
+} from "~/newstore/environments"
 
 export default {
   props: {
@@ -142,17 +116,16 @@ export default {
   data() {
     return {
       fb,
-      showJsonCode: false,
     }
   },
   subscriptions() {
     return {
-      SYNC_ENVIRONMENTS: getSettingSubject("syncEnvironments"),
+      environments: environments$,
     }
   },
   computed: {
     environmentJson() {
-      return JSON.stringify(this.$store.state.postwoman.environments, null, 2)
+      return JSON.stringify(this.environments, null, 2)
     },
   },
   methods: {
@@ -198,9 +171,8 @@ export default {
         })
         .then(({ files }) => {
           const environments = JSON.parse(Object.values(files)[0].content)
-          this.$store.commit("postwoman/replaceEnvironments", environments)
+          replaceEnvironments(environments)
           this.fileImported()
-          this.syncToFBEnvironments()
         })
         .catch((error) => {
           this.failedImport()
@@ -221,11 +193,10 @@ export default {
       reader.onload = ({ target }) => {
         const content = target.result
         const environments = JSON.parse(content)
-        this.$store.commit("postwoman/replaceEnvironments", environments)
+        replaceEnvironments(environments)
       }
       reader.readAsText(this.$refs.inputChooseFileToReplaceWith.files[0])
       this.fileImported()
-      this.syncToFBEnvironments()
       this.$refs.inputChooseFileToReplaceWith.value = ""
     },
     importFromJSON() {
@@ -243,15 +214,11 @@ export default {
         }
       }
       reader.readAsText(this.$refs.inputChooseFileToImportFrom.files[0])
-      this.syncToFBEnvironments()
       this.$refs.inputChooseFileToImportFrom.value = ""
     },
     importFromPostwoman(environments) {
-      const confirmation = this.$t("file_imported")
-      this.$store.commit("postwoman/importAddEnvironments", {
-        environments,
-        confirmation,
-      })
+      appendEnvironments(environments)
+      this.fileImported()
     },
     importFromPostman({ name, values }) {
       const environment = { name, variables: [] }
@@ -278,20 +245,6 @@ export default {
       this.$toast.success(this.$t("download_started"), {
         icon: "done",
       })
-    },
-    syncEnvironments() {
-      this.$store.commit(
-        "postwoman/replaceEnvironments",
-        fb.currentEnvironments
-      )
-      this.fileImported()
-    },
-    syncToFBEnvironments() {
-      if (fb.currentUser !== null && this.SYNC_ENVIRONMENTS) {
-        fb.writeEnvironments(
-          JSON.parse(JSON.stringify(this.$store.state.postwoman.environments))
-        )
-      }
     },
     fileImported() {
       this.$toast.info(this.$t("file_imported"), {
