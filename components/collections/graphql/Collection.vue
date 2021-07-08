@@ -3,7 +3,7 @@
     <div
       :class="[
         'row-wrapper transition duration-150 ease-in-out',
-        { 'bg-bgDarkColor': dragging },
+        { 'bg-primaryDark': dragging },
       ]"
       @dragover.prevent
       @drop.prevent="dropEvent"
@@ -12,7 +12,7 @@
       @dragleave="dragging = false"
       @dragend="dragging = false"
     >
-      <button class="icon" @click="toggleShowChildren">
+      <button class="icon button" @click="toggleShowChildren">
         <i v-show="!showChildren && !isFiltered" class="material-icons"
           >arrow_right</i
         >
@@ -31,20 +31,23 @@
         <button
           v-if="doc"
           v-tooltip.left="$t('import')"
-          class="icon"
+          class="icon button"
           @click="$emit('select-collection')"
         >
           <i class="material-icons">topic</i>
         </button>
-        <v-popover v-if="!savingMode">
-          <button v-tooltip.left="$t('more')" class="tooltip-target icon">
+        <v-popover>
+          <button
+            v-tooltip.left="$t('more')"
+            class="tooltip-target icon button"
+          >
             <i class="material-icons">more_vert</i>
           </button>
-          <template slot="popover">
+          <template #popover>
             <div>
               <button
                 v-close-popover
-                class="icon"
+                class="icon button"
                 @click="
                   $emit('add-folder', {
                     path: `${collectionIndex}`,
@@ -58,7 +61,7 @@
             <div>
               <button
                 v-close-popover
-                class="icon"
+                class="icon button"
                 @click="$emit('edit-collection')"
               >
                 <i class="material-icons">create</i>
@@ -68,7 +71,7 @@
             <div>
               <button
                 v-close-popover
-                class="icon"
+                class="icon button"
                 @click="confirmRemove = true"
               >
                 <i class="material-icons">delete</i>
@@ -84,7 +87,7 @@
         <li
           v-for="(folder, index) in collection.folders"
           :key="folder.name"
-          class="ml-8 border-l border-brdColor"
+          class="ml-8 border-l border-divider"
         >
           <CollectionsGraphqlFolder
             :picked="picked"
@@ -106,7 +109,7 @@
         <li
           v-for="(request, index) in collection.requests"
           :key="index"
-          class="ml-8 border-l border-brdColor"
+          class="ml-8 border-l border-divider"
         >
           <CollectionsGraphqlRequest
             :picked="picked"
@@ -128,7 +131,7 @@
           v-if="
             collection.folders.length === 0 && collection.requests.length === 0
           "
-          class="flex ml-8 border-l border-brdColor"
+          class="flex ml-8 border-l border-divider"
         >
           <p class="info">
             <i class="material-icons">not_interested</i>
@@ -197,6 +200,14 @@ export default Vue.extend({
       this.showChildren = !this.showChildren
     },
     removeCollection() {
+      // Cancel pick if picked collection is deleted
+      if (
+        this.picked &&
+        this.picked.pickedType === "gql-my-collection" &&
+        this.picked.collectionIndex === this.collectionIndex
+      ) {
+        this.$emit("select", { picked: null })
+      }
       removeGraphqlCollection(this.collectionIndex)
 
       this.$toast.error(this.$t("deleted").toString(), {

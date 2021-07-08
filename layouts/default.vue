@@ -5,7 +5,7 @@
         <AppSidenav />
         <main>
           <AppHeader />
-          <nuxt />
+          <nuxt class="container" />
           <AppFooter />
         </main>
       </div>
@@ -18,17 +18,22 @@ import { setupLocalPersistence } from "~/newstore/localpersistence"
 import { performMigrations } from "~/helpers/migrations"
 import { initUserInfo } from "~/helpers/teams/BackendUserInfo"
 import { registerApolloAuthUpdate } from "~/helpers/apollo"
+import { initializeFirebase } from "~/helpers/fb"
+import { getSettingSubject } from "~/newstore/settings"
 
 export default {
   beforeMount() {
     registerApolloAuthUpdate()
 
-    const color = localStorage.getItem("THEME_COLOR") || "green"
-    document.documentElement.setAttribute("data-accent", color)
+    this.$subscribeTo(getSettingSubject("THEME_COLOR"), (color) => {
+      document.documentElement.setAttribute("data-accent", color)
+    })
+
+    this.$subscribeTo(getSettingSubject("BG_COLOR"), (color) => {
+      this.$colorMode.preference = color
+    })
   },
   async mounted() {
-    document.body.classList.add("afterLoad")
-
     performMigrations()
 
     console.log(
@@ -44,13 +49,13 @@ export default {
     if (workbox) {
       workbox.addEventListener("installed", (event) => {
         if (event.isUpdate) {
-          this.$toast.show(this.$t("new_version_found"), {
+          this.$toast.show(this.$t("new_version_found").toString(), {
             icon: "info",
             duration: 0,
             theme: "toasted-primary",
             action: [
               {
-                text: this.$t("reload"),
+                text: this.$t("reload").toString(),
                 onClick: (_, toastObject) => {
                   toastObject.goAway(0)
                   window.location.reload()
@@ -64,6 +69,7 @@ export default {
 
     setupLocalPersistence()
 
+    initializeFirebase()
     initUserInfo()
   },
   beforeDestroy() {

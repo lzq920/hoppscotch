@@ -1,7 +1,16 @@
+/* eslint-disable no-restricted-globals, no-restricted-syntax */
+
 import clone from "lodash/clone"
 import assign from "lodash/assign"
 import eq from "lodash/eq"
-import { settingsStore, bulkApplySettings, defaultSettings } from "./settings"
+import {
+  settingsStore,
+  bulkApplySettings,
+  defaultSettings,
+  applySetting,
+  HoppAccentColor,
+  HoppBgColor,
+} from "./settings"
 import {
   restHistoryStore,
   graphqlHistoryStore,
@@ -52,6 +61,20 @@ function checkAndMigrateOldSettings() {
 
     delete vuexData.postwoman.environments
     window.localStorage.setItem("vuex", JSON.stringify(vuexData))
+  }
+
+  if (window.localStorage.getItem("THEME_COLOR")) {
+    const themeColor = window.localStorage.getItem("THEME_COLOR")
+    applySetting("THEME_COLOR", themeColor as HoppAccentColor)
+
+    window.localStorage.removeItem("THEME_COLOR")
+  }
+
+  if (window.localStorage.getItem("nuxt-color-mode")) {
+    const color = window.localStorage.getItem("nuxt-color-mode") as HoppBgColor
+    applySetting("BG_COLOR", color)
+
+    window.localStorage.removeItem("BG_COLOR")
   }
 }
 
@@ -130,4 +153,32 @@ export function setupLocalPersistence() {
   setupHistoryPersistence()
   setupCollectionsPersistence()
   setupEnvironmentsPersistence()
+}
+
+/**
+ * Gets a value in LocalStorage.
+ *
+ * NOTE: Use LocalStorage to only store non-reactive simple data
+ * For more complex data, use stores and connect it to localpersistence
+ */
+export function getLocalConfig(name: string) {
+  return window.localStorage.getItem(name)
+}
+
+/**
+ * Sets a value in LocalStorage.
+ *
+ * NOTE: Use LocalStorage to only store non-reactive simple data
+ * For more complex data, use stores and connect it to localpersistence
+ */
+export function setLocalConfig(key: string, value: string) {
+  window.localStorage.setItem(key, value)
+}
+
+/**
+ * Clear config value in LocalStorage.
+ * @param key Key to be cleared
+ */
+export function removeLocalConfig(key: string) {
+  window.localStorage.removeItem(key)
 }

@@ -1,16 +1,11 @@
 <template>
-  <AppSection
-    ref="environments"
-    icon="history"
-    :label="$t('environments')"
-    no-legend
-  >
+  <AppSection label="environments">
     <div class="show-on-large-screen">
       <span class="select-wrapper">
         <select
           v-model="selectedEnvironmentIndex"
           :disabled="environments.length == 0"
-          class="rounded-t-lg"
+          class="select rounded-t-lg"
         >
           <option :value="-1">No environment</option>
           <option v-if="environments.length === 0" value="0">
@@ -40,15 +35,15 @@
       :show="showModalImportExport"
       @hide-modal="displayModalImportExport(false)"
     />
-    <div class="border-b row-wrapper border-brdColor">
+    <div class="border-b row-wrapper border-divider">
       <div>
-        <button class="icon" @click="displayModalAdd(true)">
+        <button class="icon button" @click="displayModalAdd(true)">
           <i class="material-icons">add</i>
           <span>{{ $t("new") }}</span>
         </button>
       </div>
       <div>
-        <button class="icon" @click="displayModalImportExport(true)">
+        <button class="icon button" @click="displayModalImportExport(true)">
           {{ $t("import_export") }}
         </button>
       </div>
@@ -102,21 +97,6 @@ export default {
     selectedEnvironmentIndex(val) {
       setCurrentEnvironment(val)
     },
-  },
-  mounted() {
-    this._keyListener = function (e) {
-      if (e.key === "Escape") {
-        e.preventDefault()
-        this.showModalImportExport =
-          this.showModalAdd =
-          this.showModalEdit =
-            false
-      }
-    }
-    document.addEventListener("keydown", this._keyListener.bind(this))
-  },
-  beforeDestroy() {
-    document.removeEventListener("keydown", this._keyListener)
   },
   methods: {
     displayModalAdd(shouldDisplay) {

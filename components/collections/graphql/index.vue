@@ -1,17 +1,13 @@
 <template>
-  <AppSection
-    ref="collections"
-    class="yellow"
-    :label="$t('collections')"
-    no-legend
-  >
+  <AppSection label="collections">
     <div class="show-on-large-screen">
       <input
+        v-if="showCollActions"
         v-model="filterText"
         aria-label="Search"
         type="search"
         :placeholder="$t('search')"
-        class="rounded-t-lg"
+        class="input rounded-t-lg"
       />
     </div>
     <CollectionsGraphqlAdd
@@ -49,18 +45,14 @@
       :show="showModalImportExport"
       @hide-modal="displayModalImportExport(false)"
     />
-    <div class="border-b row-wrapper border-brdColor">
-      <button
-        v-if="showCollActions"
-        class="icon"
-        @click="displayModalAdd(true)"
-      >
+    <div class="border-b row-wrapper border-divider">
+      <button class="icon button" @click="displayModalAdd(true)">
         <i class="material-icons">add</i>
         <span>{{ $t("new") }}</span>
       </button>
       <button
         v-if="showCollActions"
-        class="icon"
+        class="icon button"
         @click="displayModalImportExport(true)"
       >
         {{ $t("import_export") }}
@@ -178,24 +170,6 @@ export default {
       return filteredCollections
     },
   },
-  mounted() {
-    this._keyListener = function (e) {
-      if (e.key === "Escape") {
-        e.preventDefault()
-        this.showModalAdd =
-          this.showModalEdit =
-          this.showModalImportExport =
-          this.showModalAddFolder =
-          this.showModalEditFolder =
-          this.showModalEditRequest =
-            false
-      }
-    }
-    document.addEventListener("keydown", this._keyListener.bind(this))
-  },
-  beforeDestroy() {
-    document.removeEventListener("keydown", this._keyListener)
-  },
   methods: {
     displayModalAdd(shouldDisplay) {
       this.showModalAdd = shouldDisplay
@@ -250,7 +224,9 @@ export default {
         folderName,
         request,
         requestIndex,
+        folderPath,
       } = payload
+      this.$data.editingFolderPath = folderPath
       this.$data.editingCollectionIndex = collectionIndex
       this.$data.editingFolderIndex = folderIndex
       this.$data.editingFolderName = folderName

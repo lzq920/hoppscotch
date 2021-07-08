@@ -1,81 +1,85 @@
 <template>
   <SmartModal v-if="show" @close="hideModal">
-    <div slot="header">
-      <div class="row-wrapper">
-        <h3 class="title">{{ $t("import_export") }} {{ $t("collections") }}</h3>
-        <div>
+    <template #header>
+      <h3 class="heading">{{ $t("import_export") }} {{ $t("collections") }}</h3>
+      <div>
+        <button
+          v-if="mode == 'import_from_my_collections'"
+          v-tooltip.left="'Back'"
+          class="tooltip-target icon button"
+          @click="
+            mode = 'import_export'
+            mySelectedCollectionID = undefined
+          "
+        >
+          <i class="material-icons">arrow_back</i>
+        </button>
+        <v-popover
+          v-if="
+            mode == 'import_export' && collectionsType.type == 'my-collections'
+          "
+        >
           <button
-            v-if="mode != 'import_export'"
-            v-tooltip.left="'Back'"
-            class="tooltip-target icon"
-            @click="mode = 'import_export'"
+            v-tooltip.left="$t('more')"
+            class="tooltip-target icon button"
           >
-            <i class="material-icons">arrow_back</i>
+            <i class="material-icons">more_vert</i>
           </button>
-          <v-popover
-            v-if="
-              mode == 'import_export' &&
-              collectionsType.type == 'my-collections'
-            "
-          >
-            <button v-tooltip.left="$t('more')" class="tooltip-target icon">
-              <i class="material-icons">more_vert</i>
-            </button>
-            <template slot="popover">
-              <div>
-                <button
-                  v-close-popover
-                  class="icon"
-                  @click="readCollectionGist"
-                >
-                  <i class="material-icons">assignment_returned</i>
-                  <span>{{ $t("import_from_gist") }}</span>
-                </button>
-              </div>
-              <div
-                v-tooltip.bottom="{
-                  content: !fb.currentUser
-                    ? $t('login_with_github_to') + $t('create_secret_gist')
-                    : fb.currentUser.provider !== 'github.com'
-                    ? $t('login_with_github_to') + $t('create_secret_gist')
-                    : null,
-                }"
+          <template #popover>
+            <div>
+              <button
+                v-close-popover
+                class="icon button"
+                @click="readCollectionGist"
               >
-                <button
-                  v-close-popover
-                  :disabled="
-                    !fb.currentUser
-                      ? true
-                      : fb.currentUser.provider !== 'github.com'
-                      ? true
-                      : false
-                  "
-                  class="icon"
-                  @click="createCollectionGist"
-                >
-                  <i class="material-icons">assignment_turned_in</i>
-                  <span>{{ $t("create_secret_gist") }}</span>
-                </button>
-              </div>
-            </template>
-          </v-popover>
-          <button class="icon" @click="hideModal">
-            <i class="material-icons">close</i>
-          </button>
-        </div>
+                <i class="material-icons">assignment_returned</i>
+                <span>{{ $t("import_from_gist") }}</span>
+              </button>
+            </div>
+            <div
+              v-tooltip.bottom="{
+                content: !currentUser
+                  ? $t('login_with_github_to') + $t('create_secret_gist')
+                  : currentUser.provider !== 'github.com'
+                  ? $t('login_with_github_to') + $t('create_secret_gist')
+                  : null,
+              }"
+            >
+              <button
+                v-close-popover
+                :disabled="
+                  !currentUser
+                    ? true
+                    : currentUser.provider !== 'github.com'
+                    ? true
+                    : false
+                "
+                class="icon button"
+                @click="createCollectionGist"
+              >
+                <i class="material-icons">assignment_turned_in</i>
+                <span>{{ $t("create_secret_gist") }}</span>
+              </button>
+            </div>
+          </template>
+        </v-popover>
+        <button class="icon button" @click="hideModal">
+          <i class="material-icons">close</i>
+        </button>
       </div>
-    </div>
-    <div slot="body" class="flex flex-col">
-      <div v-if="mode == 'import_export'" class="flex flex-col items-start p-2">
+    </template>
+    <template #body>
+      <div v-if="mode == 'import_export'" class="flex flex-col p-2 items-start">
         <button
           v-tooltip="$t('replace_current')"
-          class="icon"
+          class="icon button"
           @click="openDialogChooseFileToReplaceWith"
         >
           <i class="material-icons">folder_special</i>
           <span>{{ $t("replace_json") }}</span>
           <input
             ref="inputChooseFileToReplaceWith"
+            class="input"
             type="file"
             style="display: none"
             accept="application/json"
@@ -84,13 +88,14 @@
         </button>
         <button
           v-tooltip="$t('preserve_current')"
-          class="icon"
+          class="icon button"
           @click="openDialogChooseFileToImportFrom"
         >
           <i class="material-icons">create_new_folder</i>
           <span>{{ $t("import_json") }}</span>
           <input
             ref="inputChooseFileToImportFrom"
+            class="input"
             type="file"
             style="display: none"
             accept="application/json"
@@ -100,7 +105,7 @@
         <button
           v-if="collectionsType.type == 'team-collections'"
           v-tooltip="$t('preserve_current')"
-          class="icon"
+          class="icon button"
           @click="mode = 'import_from_my_collections'"
         >
           <i class="material-icons">folder_shared</i>
@@ -108,7 +113,7 @@
         </button>
         <button
           v-tooltip="$t('download_file')"
-          class="icon"
+          class="icon button"
           @click="exportJSON"
         >
           <i class="material-icons">drive_file_move</i>
@@ -121,6 +126,7 @@
         <span class="select-wrapper">
           <select
             type="text"
+            class="select"
             autofocus
             @change="
               ($event) => {
@@ -146,27 +152,28 @@
             </option>
           </select>
         </span>
-        <div slot="footer">
-          <div class="row-wrapper">
-            <span></span>
-            <span>
-              <button
-                class="m-2 icon primary"
-                :disabled="mySelectedCollectionID == undefined"
-                @click="importFromMyCollections"
-              >
-                {{ $t("import") }}
-              </button>
-            </span>
-          </div>
-        </div>
       </div>
-    </div>
+    </template>
+    <template #footer>
+      <div v-if="mode == 'import_from_my_collections'">
+        <span></span>
+        <span>
+          <button
+            class="m-2 icon button"
+            :disabled="mySelectedCollectionID == undefined"
+            @click="importFromMyCollections"
+          >
+            <i class="material-icons">create_new_folder</i>
+            <span>{{ $t("import") }}</span>
+          </button>
+        </span>
+      </div>
+    </template>
   </SmartModal>
 </template>
 
 <script>
-import { fb } from "~/helpers/fb"
+import { currentUser$ } from "~/helpers/fb/auth"
 import * as teamUtils from "~/helpers/teams/utils"
 import {
   restCollections$,
@@ -185,12 +192,12 @@ export default {
       mode: "import_export",
       mySelectedCollectionID: undefined,
       collectionJson: "",
-      fb,
     }
   },
   subscriptions() {
     return {
       myCollections: restCollections$,
+      currentUser: currentUser$,
     }
   },
   methods: {
@@ -208,7 +215,7 @@ export default {
           },
           {
             headers: {
-              Authorization: `token ${fb.currentUser.accessToken}`,
+              Authorization: `token ${this.currentUser.accessToken}`,
               Accept: "application/vnd.github.v3+json",
             },
           }

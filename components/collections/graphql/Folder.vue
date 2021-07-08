@@ -3,7 +3,7 @@
     <div
       :class="[
         'row-wrapper transition duration-150 ease-in-out',
-        { 'bg-bgDarkColor': dragging },
+        { 'bg-primaryDark': dragging },
       ]"
       @dragover.prevent
       @drop.prevent="dropEvent"
@@ -13,7 +13,7 @@
       @dragend="dragging = false"
     >
       <div>
-        <button class="icon" @click="toggleShowChildren">
+        <button class="icon button" @click="toggleShowChildren">
           <i v-show="!showChildren && !isFiltered" class="material-icons"
             >arrow_right</i
           >
@@ -28,15 +28,15 @@
           <span>{{ folder.name }}</span>
         </button>
       </div>
-      <v-popover v-if="!savingMode">
-        <button v-tooltip.left="$t('more')" class="tooltip-target icon">
+      <v-popover>
+        <button v-tooltip.left="$t('more')" class="tooltip-target icon button">
           <i class="material-icons">more_vert</i>
         </button>
-        <template slot="popover">
+        <template #popover>
           <div>
             <button
               v-close-popover
-              class="icon"
+              class="icon button"
               @click="$emit('add-folder', { folder, path: folderPath })"
             >
               <i class="material-icons">create_new_folder</i>
@@ -46,7 +46,7 @@
           <div>
             <button
               v-close-popover
-              class="icon"
+              class="icon button"
               @click="$emit('edit-folder', { folder, folderPath })"
             >
               <i class="material-icons">edit</i>
@@ -54,7 +54,11 @@
             </button>
           </div>
           <div>
-            <button v-close-popover class="icon" @click="confirmRemove = true">
+            <button
+              v-close-popover
+              class="icon button"
+              @click="confirmRemove = true"
+            >
               <i class="material-icons">delete</i>
               <span>{{ $t("delete") }}</span>
             </button>
@@ -67,7 +71,7 @@
         <li
           v-for="(subFolder, subFolderIndex) in folder.folders"
           :key="subFolder.name"
-          class="ml-8 border-l border-brdColor"
+          class="ml-8 border-l border-divider"
         >
           <CollectionsGraphqlFolder
             :picked="picked"
@@ -89,7 +93,7 @@
         <li
           v-for="(request, index) in folder.requests"
           :key="index"
-          class="flex ml-8 border-l border-brdColor"
+          class="flex ml-8 border-l border-divider"
         >
           <CollectionsGraphqlRequest
             :picked="picked"
@@ -114,7 +118,7 @@
           folder.requests.length === 0
         "
       >
-        <li class="flex ml-8 border-l border-brdColor">
+        <li class="flex ml-8 border-l border-divider">
           <p class="info">
             <i class="material-icons">not_interested</i>
             {{ $t("folder_empty") }}
@@ -181,6 +185,15 @@ export default Vue.extend({
       this.showChildren = !this.showChildren
     },
     removeFolder() {
+      // Cancel pick if the picked folder is deleted
+      if (
+        this.picked &&
+        this.picked.pickedType === "gql-my-folder" &&
+        this.picked.folderPath === this.folderPath
+      ) {
+        this.$emit("select", { picked: null })
+      }
+
       removeGraphqlFolder(this.folderPath)
       this.$toast.error(this.$t("deleted").toString(), {
         icon: "delete",

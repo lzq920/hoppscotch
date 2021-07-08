@@ -1,20 +1,19 @@
 <template>
   <SmartModal v-if="show" @close="hideModal">
-    <div slot="header">
-      <div class="row-wrapper">
-        <h3 class="title">{{ $t("edit_environment") }}</h3>
-        <div>
-          <button class="icon" @click="hideModal">
-            <i class="material-icons">close</i>
-          </button>
-        </div>
+    <template #header>
+      <h3 class="heading">{{ $t("edit_environment") }}</h3>
+      <div>
+        <button class="icon button" @click="hideModal">
+          <i class="material-icons">close</i>
+        </button>
       </div>
-    </div>
-    <div slot="body" class="flex flex-col">
-      <label for="selectLabel">{{ $t("label") }}</label>
+    </template>
+    <template #body>
+      <label for="selectLabelEnvEdit">{{ $t("label") }}</label>
       <input
-        id="selectLabel"
+        id="selectLabelEnvEdit"
         v-model="name"
+        class="input"
         type="text"
         :placeholder="editingEnvironment.name"
         @keyup.enter="saveEnvironment"
@@ -24,10 +23,10 @@
         <div>
           <button
             v-tooltip.bottom="$t('clear')"
-            class="icon"
+            class="icon button"
             @click="clearContent($event)"
           >
-            <i class="material-icons">clear_all</i>
+            <i class="material-icons">{{ clearIcon }}</i>
           </button>
         </div>
       </div>
@@ -38,8 +37,8 @@
           border-b border-dashed
           divide-y
           md:divide-x
-          border-brdColor
-          divide-dashed divide-brdColor
+          border-divider
+          divide-dashed divide-divider
           md:divide-y-0
         "
         :class="{ 'border-t': index == 0 }"
@@ -47,6 +46,7 @@
         <li>
           <input
             v-model="variable.key"
+            class="input"
             :placeholder="$t('variable_count', { count: index + 1 })"
             :name="'param' + index"
           />
@@ -54,6 +54,7 @@
         <li>
           <input
             v-model="variable.value"
+            class="input"
             :placeholder="$t('value_count', { count: index + 1 })"
             :name="'value' + index"
           />
@@ -63,7 +64,7 @@
             <button
               id="variable"
               v-tooltip.bottom="$t('delete')"
-              class="icon"
+              class="icon button"
               @click="removeEnvironmentVariable(index)"
             >
               <i class="material-icons">delete</i>
@@ -73,26 +74,24 @@
       </ul>
       <ul>
         <li>
-          <button class="icon" @click="addEnvironmentVariable">
+          <button class="icon button" @click="addEnvironmentVariable">
             <i class="material-icons">add</i>
             <span>{{ $t("add_new") }}</span>
           </button>
         </li>
       </ul>
-    </div>
-    <div slot="footer">
-      <div class="row-wrapper">
-        <span></span>
-        <span>
-          <button class="icon" @click="hideModal">
-            {{ $t("cancel") }}
-          </button>
-          <button class="icon primary" @click="saveEnvironment">
-            {{ $t("save") }}
-          </button>
-        </span>
-      </div>
-    </div>
+    </template>
+    <template #footer>
+      <span></span>
+      <span>
+        <button class="icon button" @click="hideModal">
+          {{ $t("cancel") }}
+        </button>
+        <button class="icon button primary" @click="saveEnvironment">
+          {{ $t("save") }}
+        </button>
+      </span>
+    </template>
   </SmartModal>
 </template>
 
@@ -115,7 +114,7 @@ export default Vue.extend({
     return {
       name: null as string | null,
       vars: [] as { key: string; value: string }[],
-      doneButton: '<i class="material-icons">done</i>',
+      clearIcon: "clear_all",
     }
   },
   watch: {
@@ -129,17 +128,13 @@ export default Vue.extend({
     },
   },
   methods: {
-    clearContent({ target }: { target: HTMLElement }) {
+    clearContent() {
       this.vars = []
-
-      target.innerHTML = this.doneButton
+      this.clearIcon = "done"
       this.$toast.info(this.$t("cleared").toString(), {
         icon: "clear_all",
       })
-      setTimeout(
-        () => (target.innerHTML = '<i class="material-icons">clear_all</i>'),
-        1000
-      )
+      setTimeout(() => (this.clearIcon = "clear_all"), 1000)
     },
     addEnvironmentVariable() {
       this.vars.push({
